@@ -1,6 +1,8 @@
+[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/ccssmnn/hego)
+
 # hego
 
-hego aims to be an efficient, zero dependency library for metaheuristic algorithms in Go. The advantage of Go is the combination of understandable syntax, a static type system and efficiency.
+hego aims to be an efficient, zero dependency library for metaheuristic algorithms in Go.
 
 Most real world optimization problems have high costs when it comes to objective function evaluation. This package allows you to define your objectives in Go. Moreover Go's approach to concurrency makes it easy to take advantages of higher cpu counts.
 
@@ -8,13 +10,7 @@ Finding the right algorithm and parameters for your problem is not trivial. hego
 
 ## Algorithms
 
-- Simulated Annealing
-  - [x] Binary
-  - [ ] Integer
-  - [ ] Continuous
-- Genetic Algorithms
-  - [ ] Binary
-  - [ ] Integer
-  - [ ] Continuous
-- Ant Colony Optimization
-  - [ ] Integer
+[x] Simulated Annealing
+[ ] Genetic Algorithms
+[ ] Ant Colony Optimization
+[ ] Glowworm Swarm Optimization
