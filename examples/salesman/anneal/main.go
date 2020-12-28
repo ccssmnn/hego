@@ -41,13 +41,13 @@ type state struct {
 	tour []int
 }
 
-func (s *state) Clone() hego.State {
+func (s *state) Clone() hego.AnnealState {
 	new := &state{tour: make([]int, len(s.tour))}
 	copy(new.tour, s.tour)
 	return new
 }
 
-func (s *state) Neighbor() hego.State {
+func (s *state) Neighbor() hego.AnnealState {
 	neighbor := &state{tour: []int{}}
 	neighbor.tour = mutate.Swap(s.tour)
 	return neighbor
@@ -82,15 +82,13 @@ func main() {
 		initialState.tour[i], initialState.tour[j] = initialState.tour[j], initialState.tour[i]
 	})
 
-	settings := hego.Settings{
-		MaxIterations: 1000000,
-		Verbose:       100000,
-	}
+	settings := hego.AnnealSettings{}
+	settings.MaxIterations = 1000000
+	settings.Verbose = 100000
+	settings.Temperature = 100000.0
+	settings.AnnealingFactor = 0.99999
 
-	temperature := 100000.0
-	annealingFactor := 0.99999
-
-	result, err := hego.Anneal(&initialState, temperature, annealingFactor, settings)
+	result, err := hego.Anneal(&initialState, settings)
 
 	if err != nil {
 		fmt.Printf("Got error while running Anneal: %v", err)

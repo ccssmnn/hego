@@ -9,33 +9,39 @@ import (
 	"time"
 )
 
-// State represents the current state of the annealing system. Energy is the
+// AnnealState represents the current state of the annealing system. Energy is the
 // value of the objective function. Neighbor returns another state candidate. Clone
 // reproduces this state
-type State interface {
+type AnnealState interface {
 	Energy() float64
-	Neighbor() State
-	Clone() State
+	Neighbor() AnnealState
+	Clone() AnnealState
 }
 
 // AnnealResult represents the result of the Anneal optimization. The last state
 // and last energy are the final results. It extends the basic Result type
 type AnnealResult struct {
-	States   []State
+	States   []AnnealState
 	Energies []float64
 	Result
+}
+
+// AnnealSettings represents the algorithm settings for the simulated annealing
+// optimization
+type AnnealSettings struct {
+	Temperature     float64
+	AnnealingFactor float64
+	Settings
 }
 
 // Anneal performs simulated annealing for binary encoded problems such as
 // the Knapsack problem
 func Anneal(
-	initialState State,
-	temperature float64,
-	annealingFactor float64,
-	settings Settings,
+	initialState AnnealState,
+	settings AnnealSettings,
 ) (res AnnealResult, err error) {
 
-	evaluate := func(s State) float64 {
+	evaluate := func(s AnnealState) float64 {
 		res.FuncEvaluations++
 		return s.Energy()
 	}
@@ -44,6 +50,7 @@ func Anneal(
 
 	state := initialState.Clone()
 	energy := evaluate(state)
+	temperature := settings.Temperature
 
 	res.States = append(res.States, state)
 	res.Energies = append(res.Energies, energy)
@@ -72,7 +79,7 @@ func Anneal(
 			fmt.Fprintf(w, "%v\t%v\t%v\t\n", iter, temperature, energy)
 		}
 
-		temperature = temperature * annealingFactor
+		temperature = temperature * settings.AnnealingFactor
 
 		res.States = append(res.States, state)
 		res.Energies = append(res.Energies, energy)

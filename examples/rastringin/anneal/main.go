@@ -16,13 +16,13 @@ type state struct {
 	v []float64
 }
 
-func (s *state) Clone() hego.State {
+func (s *state) Clone() hego.AnnealState {
 	clone := state{v: make([]float64, len(s.v))}
 	copy(clone.v, s.v)
 	return &clone
 }
 
-func (s *state) Neighbor() hego.State {
+func (s *state) Neighbor() hego.AnnealState {
 	n := state{v: make([]float64, len(s.v))}
 	n.v[0] = s.v[0] + rand.NormFloat64()
 	n.v[1] = s.v[1] + rand.NormFloat64()
@@ -35,15 +35,14 @@ func (s *state) Energy() float64 {
 
 func main() {
 	initialState := state{v: []float64{1.5, 1.5}}
-	settings := hego.Settings{
-		MaxIterations: 10000,
-		Verbose:       1000,
-	}
 
-	temperature := 10.0
-	annealingFactor := 0.999
+	settings := hego.AnnealSettings{}
+	settings.MaxIterations = 10000
+	settings.Verbose = 1000
+	settings.Temperature = 10.0
+	settings.AnnealingFactor = 0.999
 
-	result, err := hego.Anneal(&initialState, temperature, annealingFactor, settings)
+	result, err := hego.Anneal(&initialState, settings)
 
 	if err != nil {
 		fmt.Printf("Got error while running Anneal: %v", err)

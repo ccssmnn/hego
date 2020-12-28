@@ -30,13 +30,13 @@ type knapsackState struct {
 	selection []bool
 }
 
-func (k *knapsackState) Clone() hego.State {
+func (k *knapsackState) Clone() hego.AnnealState {
 	clone := knapsackState{selection: make([]bool, len(k.selection))}
 	copy(clone.selection, k.selection)
 	return &clone
 }
 
-func (k *knapsackState) Neighbor() hego.State {
+func (k *knapsackState) Neighbor() hego.AnnealState {
 	n := knapsackState{}
 	n.selection = mutate.Flip(k.selection)
 	return &n
@@ -51,15 +51,13 @@ func main() {
 		selection: []bool{false, true, true, false, false, true, false, false, false, true, true, false, false, true, false, true, false, true, false, false},
 	}
 
-	settings := hego.Settings{
-		MaxIterations: 100,
-		Verbose:       10,
-	}
+	settings := hego.AnnealSettings{}
+	settings.MaxIterations = 100
+	settings.Verbose = 10
+	settings.Temperature = 100.0
+	settings.AnnealingFactor = 0.9
 
-	temperature := 100.0
-	annealingFactor := 0.9
-
-	result, err := hego.Anneal(&initialState, temperature, annealingFactor, settings)
+	result, err := hego.Anneal(&initialState, settings)
 
 	if err != nil {
 		fmt.Printf("Got error while running Anneal: %v", err)
