@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ccssmnn/hego"
+	"github.com/ccssmnn/hego/mutate"
 )
 
 func knapsack(selection []bool, values, weights []float64, maxWeight float64) float64 {
@@ -37,7 +38,7 @@ func (k *knapsackState) Clone() hego.State {
 
 func (k *knapsackState) Neighbor() hego.State {
 	n := knapsackState{}
-	n.selection = hego.Flip(k.selection)
+	n.selection = mutate.Flip(k.selection)
 	return &n
 }
 
