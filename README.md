@@ -10,7 +10,10 @@ Finding the right algorithm and parameters for your problem is not trivial. hego
 
 ## Algorithms
 
-[x] Simulated Annealing
-[ ] Genetic Algorithms
-[ ] Ant Colony Optimization
-[ ] Glowworm Swarm Optimization
+- Simulated Annealing
+- Genetic Algorithm
+
+TODO:
+
+- Ant Colony Optimization
+- Glowworm Swarm Optimization

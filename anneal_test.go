@@ -28,14 +28,14 @@ func (b *bitState) Neighbor() AnnealState {
 }
 
 // TestAnnealBit runs the AnnealBit method and checks for errors
-func TestAnnealBit(t *testing.T) {
+func TestAnneal(t *testing.T) {
 	initialState := bitState{state: []bool{false, true, false}}
 
 	settings := AnnealSettings{}
 	settings.Temperature = 100.0
 	settings.AnnealingFactor = 0.9
 	settings.MaxIterations = 10
-	settings.Verbose = 1
+	settings.Verbose = 0
 
 	res, err := Anneal(&initialState, settings)
 	if err != nil {
