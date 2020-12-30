@@ -94,15 +94,15 @@ func main() {
 	}
 
 	settings := hego.GeneticSettings{}
-	settings.MutationRate = 0.4
-	settings.Elitism = 0
-	settings.MaxIterations = 1000
-	settings.Verbose = 100
+	settings.MutationRate = 0.3
+	settings.Elitism = 5
+	settings.MaxIterations = 10000
+	settings.Verbose = 1000
 
 	result, err := hego.Genetic(population, settings)
 
 	if err != nil {
-		fmt.Printf("Got error while running Anneal: %v", err)
+		fmt.Printf("Got error while running Genetic Algorithm: %v", err)
 	} else {
 		fmt.Printf("Finished Genetic Algorithm in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
 	}

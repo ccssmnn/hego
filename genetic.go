@@ -1,10 +1,12 @@
 package hego
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
 	"os"
+	"sort"
 	"text/tabwriter"
 	"time"
 )
@@ -68,7 +70,31 @@ func (s *GeneticSettings) Verify() error {
 	if s.MutationRate > 1.0 || s.MutationRate < 0.0 {
 		return fmt.Errorf("mutation rate must be between 0.0 and 1.0, not %v", s.MutationRate)
 	}
+	if s.Elitism < 0 {
+		return errors.New("elitism represents the number of best genomes that survive one generation. It cannot be negative")
+	}
 	return nil
+}
+
+type candidate struct {
+	genome  GeneticGenome
+	fitness float64
+}
+
+type population struct {
+	candidates []candidate
+}
+
+func (p *population) Len() int {
+	return len(p.candidates)
+}
+
+func (p *population) Less(i, j int) bool {
+	return p.candidates[i].fitness < p.candidates[j].fitness
+}
+
+func (p *population) Swap(i, j int) {
+	p.candidates[i], p.candidates[j] = p.candidates[j], p.candidates[i]
 }
 
 // Genetic Performs optimization. The optimization follows three steps:
@@ -76,24 +102,22 @@ func (s *GeneticSettings) Verify() error {
 // - select chromosomes with best fitness values with higher propability as parents
 // - use parents for reproduction (crossover and mutation)
 func Genetic(
-	population []GeneticGenome,
+	initialPopulation []GeneticGenome,
 	settings GeneticSettings,
 ) (res GeneticResult, err error) {
-
+	populationSize := len(initialPopulation)
 	err = settings.Verify()
 	if err != nil {
 		err = fmt.Errorf("settings verification failed: %v", err)
 		return
 	}
-
-	start := time.Now()
-
+	// increase FuncEvaluations for every fitness call
 	evaluate := func(g GeneticGenome) float64 {
 		res.FuncEvaluations++
 		return g.Fitness()
 	}
 
-	fitnesses := make([]float64, len(population))
+	start := time.Now()
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, []byte(" ")[0], tabwriter.AlignRight)
 	if settings.Verbose > 0 {
@@ -101,15 +125,26 @@ func Genetic(
 		fmt.Fprintln(w, "Iteration\tAverage Fitness\tBest Fitness\t")
 	}
 
+	pop := population{candidates: make([]candidate, len(initialPopulation))}
+	for i := range initialPopulation {
+		pop.candidates[i].genome = initialPopulation[i]
+	}
+
 	for i := 0; i < settings.MaxIterations; i++ {
 		// calculate fitness
 		totalFitness := 0.0
 		bestFitness := math.MaxFloat64
 		worstFitness := -bestFitness
-		for idx, genome := range population {
-			fit := evaluate(genome)
+		for idx, can := range pop.candidates {
+			// skip fitness evaluation for elite
+			var fit float64
+			if i != 0 && idx < settings.Elitism {
+				fit = pop.candidates[idx].fitness
+			} else {
+				fit = evaluate(can.genome)
+			}
 			totalFitness += fit
-			fitnesses[idx] = fit
+			pop.candidates[idx].fitness = fit
 			if fit < bestFitness {
 				bestFitness = fit
 			}
@@ -117,27 +152,34 @@ func Genetic(
 				worstFitness = fit
 			}
 		}
-		res.AveragedFitness = append(res.AveragedFitness, totalFitness/float64(len(population)))
+		res.AveragedFitness = append(res.AveragedFitness, totalFitness/float64(populationSize))
 		res.BestFitness = append(res.BestFitness, bestFitness)
 
-		// select parents
-		weights := make([]float64, len(fitnesses))
-		for i, fit := range fitnesses {
-			weights[i] = math.Max(worstFitness-fit, 1e-10)
+		if settings.Elitism > 0 {
+			sort.Sort(&pop)
 		}
-		parentIds := weightedChoice(weights, len(fitnesses))
+
+		// select parents
+		weights := make([]float64, populationSize)
+		for i := 0; i < populationSize; i++ {
+			weights[i] = math.Max(worstFitness-pop.candidates[i].fitness, 1e-10)
+		}
+		parentIds := weightedChoice(weights, populationSize-settings.Elitism)
 		parents := make([]GeneticGenome, len(parentIds))
 		for index, id := range parentIds {
-			parents[index] = population[id]
+			parents[index] = pop.candidates[id].genome
 		}
 
 		// perform crossover and mutation
-		for idx := range population {
+		for idx := settings.Elitism; idx < populationSize; idx++ {
 			a, b := rand.Intn(len(parents)), rand.Intn(len(parents))
-			population[idx] = parents[a].Crossover(parents[b])
+			child := parents[a].Crossover(parents[b])
 			if rand.Float64() > settings.MutationRate {
-				population[idx] = population[idx].Mutate()
+				pop.candidates[idx].genome = child.Mutate()
+			} else {
+				pop.candidates[idx].genome = child
 			}
+			pop.candidates[idx].fitness = math.MaxFloat64
 		}
 
 		if settings.Verbose > 0 && (i%settings.Verbose == 0 || i+1 == settings.MaxIterations) {
