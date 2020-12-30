@@ -41,6 +41,7 @@ type GeneticGenome interface {
 	Fitness() float64
 	Mutate() GeneticGenome
 	Crossover(other GeneticGenome) GeneticGenome
+	GetGene() []interface{}
 }
 
 // GeneticResult represents the result of the genetic algorithm

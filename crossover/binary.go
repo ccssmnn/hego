@@ -1,4 +1,4 @@
-package combine
+package crossover
 
 import (
 	"math/rand"

@@ -27,6 +27,14 @@ func (b *genome) Mutate() GeneticGenome {
 	return &n
 }
 
+func (b *genome) GetGene() []interface{} {
+	gene := make([]interface{}, len(b.state))
+	for i, value := range b.state {
+		gene[i] = value
+	}
+	return gene
+}
+
 func TestGenetic(t *testing.T) {
 	population := make([]GeneticGenome, 0)
 	for i := 0; i < 10; i++ {

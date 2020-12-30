@@ -62,7 +62,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Got error while running Anneal: %v", err)
 	} else {
-		fmt.Printf("Finished Annealing in %v! Result: %v, Value: %v \n", result.Runtime, result.States[result.Iterations], -result.Energies[result.Iterations])
+		fmt.Printf("Finished Simulated Annealing Algorithm in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
 	}
 	return
 }
