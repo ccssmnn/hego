@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"sort"
+	"sync"
 	"text/tabwriter"
 	"time"
 )
@@ -58,7 +59,6 @@ type GeneticResult struct {
 type GeneticSettings struct {
 	MutationRate float64
 	Elitism      int
-	Concurrent   bool
 	Settings
 }
 
@@ -131,27 +131,36 @@ func Genetic(
 	}
 
 	for i := 0; i < settings.MaxIterations; i++ {
+		wg := sync.WaitGroup{}
 		// calculate fitness
 		totalFitness := 0.0
 		bestFitness := math.MaxFloat64
 		worstFitness := -bestFitness
+
 		for idx, can := range pop.candidates {
-			// skip fitness evaluation for elite
-			var fit float64
-			if i != 0 && idx < settings.Elitism {
-				fit = pop.candidates[idx].fitness
-			} else {
-				fit = evaluate(can.genome)
-			}
-			totalFitness += fit
-			pop.candidates[idx].fitness = fit
-			if fit < bestFitness {
-				bestFitness = fit
-			}
-			if fit > worstFitness {
-				worstFitness = fit
-			}
+			wg.Add(1)
+			// evalutation of fitness function is independent for each genome
+			go func(idx int, can candidate) {
+				// skip fitness evaluation for elite
+				var fit float64
+				if i != 0 && idx < settings.Elitism {
+					fit = pop.candidates[idx].fitness
+				} else {
+					fit = evaluate(can.genome)
+				}
+				totalFitness += fit
+				pop.candidates[idx].fitness = fit
+				if fit < bestFitness {
+					bestFitness = fit
+				}
+				if fit > worstFitness {
+					worstFitness = fit
+				}
+				wg.Done()
+			}(idx, can)
 		}
+		wg.Wait()
+
 		res.AveragedFitness = append(res.AveragedFitness, totalFitness/float64(populationSize))
 		res.BestFitness = append(res.BestFitness, bestFitness)
 
@@ -172,15 +181,21 @@ func Genetic(
 
 		// perform crossover and mutation
 		for idx := settings.Elitism; idx < populationSize; idx++ {
-			a, b := rand.Intn(len(parents)), rand.Intn(len(parents))
-			child := parents[a].Crossover(parents[b])
-			if rand.Float64() > settings.MutationRate {
-				pop.candidates[idx].genome = child.Mutate()
-			} else {
-				pop.candidates[idx].genome = child
-			}
-			pop.candidates[idx].fitness = math.MaxFloat64
+			// crossover and mutation is independent
+			wg.Add(1)
+			go func(idx int) {
+				a, b := rand.Intn(len(parents)), rand.Intn(len(parents))
+				child := parents[a].Crossover(parents[b])
+				if rand.Float64() > settings.MutationRate {
+					pop.candidates[idx].genome = child.Mutate()
+				} else {
+					pop.candidates[idx].genome = child
+				}
+				pop.candidates[idx].fitness = math.MaxFloat64
+				wg.Done()
+			}(idx)
 		}
+		wg.Wait()
 
 		if settings.Verbose > 0 && (i%settings.Verbose == 0 || i+1 == settings.MaxIterations) {
 			fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, res.AveragedFitness[i], res.BestFitness[i])

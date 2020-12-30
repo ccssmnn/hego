@@ -94,7 +94,7 @@ func main() {
 	}
 
 	settings := hego.GeneticSettings{}
-	settings.MutationRate = 0.3
+	settings.MutationRate = 0.5
 	settings.Elitism = 5
 	settings.MaxIterations = 10000
 	settings.Verbose = 1000
