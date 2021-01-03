@@ -9,12 +9,6 @@ type bitState struct {
 	state []bool
 }
 
-func (b *bitState) Clone() AnnealState {
-	clone := bitState{state: make([]bool, len(b.state))}
-	copy(clone.state, b.state)
-	return &clone
-}
-
 func (b *bitState) Energy() float64 {
 	return rand.Float64()
 }

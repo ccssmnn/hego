@@ -10,12 +10,10 @@ import (
 )
 
 // AnnealState represents the current state of the annealing system. Energy is the
-// value of the objective function. Neighbor returns another state candidate. Clone
-// reproduces this state
+// value of the objective function. Neighbor returns another state candidate
 type AnnealState interface {
 	Energy() float64
 	Neighbor() AnnealState
-	Clone() AnnealState
 }
 
 // AnnealResult represents the result of the Anneal optimization. The last state
@@ -67,7 +65,7 @@ func Anneal(
 
 	start := time.Now()
 
-	state := initialState.Clone()
+	state := initialState
 	energy := evaluate(state)
 	temperature := settings.Temperature
 	res.States = append(res.States, state)
@@ -87,12 +85,12 @@ func Anneal(
 		candidateEnergy := evaluate(candidate)
 
 		if candidateEnergy < energy {
-			state = candidate.Clone()
+			state = candidate
 			energy = candidateEnergy
 		} else {
 			probability := math.Exp((energy - candidateEnergy) / temperature)
 			if probability > rand.Float64() {
-				state = candidate.Clone()
+				state = candidate
 				energy = candidateEnergy
 			}
 		}

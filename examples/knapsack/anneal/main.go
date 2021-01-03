@@ -30,12 +30,6 @@ type knapsackState struct {
 	selection []bool
 }
 
-func (k *knapsackState) Clone() hego.AnnealState {
-	clone := knapsackState{selection: make([]bool, len(k.selection))}
-	copy(clone.selection, k.selection)
-	return &clone
-}
-
 func (k *knapsackState) Neighbor() hego.AnnealState {
 	n := knapsackState{}
 	n.selection = mutate.Flip(k.selection)

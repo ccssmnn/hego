@@ -41,12 +41,6 @@ type state struct {
 	tour []int
 }
 
-func (s *state) Clone() hego.AnnealState {
-	new := &state{tour: make([]int, len(s.tour))}
-	copy(new.tour, s.tour)
-	return new
-}
-
 func (s *state) Neighbor() hego.AnnealState {
 	neighbor := &state{tour: []int{}}
 	neighbor.tour = mutate.Swap(s.tour)

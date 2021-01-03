@@ -5,10 +5,9 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/ccssmnn/hego/mutate"
-
 	"github.com/ccssmnn/hego"
 	"github.com/ccssmnn/hego/crossover"
+	"github.com/ccssmnn/hego/mutate"
 )
 
 func rastringin(x, y float64) float64 {
