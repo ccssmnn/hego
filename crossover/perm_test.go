@@ -13,10 +13,10 @@ func findInSlice(value int, slice []int) int {
 	return count
 }
 
-func TestOrderBasedCrossover(t *testing.T) {
+func TestTwoPointPerm(t *testing.T) {
 	a := []int{1, 2, 3, 4, 5, 6, 7, 8}
 	b := []int{8, 7, 6, 5, 4, 3, 2, 1}
-	c := OrderBasedCrossover(a, b)
+	c := TwoPointPerm(a, b)
 	for _, v := range a {
 		appearances := findInSlice(v, c)
 		if appearances != 1 {

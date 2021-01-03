@@ -7,9 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ccssmnn/hego/crossover"
-
 	"github.com/ccssmnn/hego"
+	"github.com/ccssmnn/hego/crossover"
 	"github.com/ccssmnn/hego/mutate"
 )
 
@@ -59,7 +58,7 @@ func (g *genome) Mutate() hego.GeneticGenome {
 func (g *genome) Crossover(other hego.GeneticGenome) hego.GeneticGenome {
 	new := &genome{}
 	gene := hego.ConvertInt(other.GetGene())
-	new.tour = crossover.OrderBasedCrossover(g.tour, gene)
+	new.tour = crossover.TwoPointPerm(g.tour, gene)
 	return new
 }
 

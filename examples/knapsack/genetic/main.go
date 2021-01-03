@@ -43,7 +43,7 @@ func (k *knapsackGenome) GetGene() []interface{} {
 func (k *knapsackGenome) Crossover(other hego.GeneticGenome) hego.GeneticGenome {
 	new := knapsackGenome{selection: make([]bool, len(k.selection))}
 	otherSelection := hego.ConvertBool(other.GetGene())
-	new.selection = crossover.UniformCrossoverBool(k.selection, otherSelection)
+	new.selection = crossover.UniformBool(k.selection, otherSelection)
 	return &new
 }
 

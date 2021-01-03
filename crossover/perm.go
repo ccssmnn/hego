@@ -4,9 +4,42 @@ import (
 	"math/rand"
 )
 
-// OrderBasedCrossover takes a slice of a and fills the gaps with values from b
+// OnePointPerm cuts a in two pieces and fills the gap with values from b
+// while preserving order. 12345678 + 26371485 -> 1234**** + *6*7**85 -> 12346785
+func OnePointPerm(a, b []int) []int {
+	if len(a) != len(b) {
+		panic("expected inputs to have same length")
+	}
+	c := make([]int, len(a))
+	cut := rand.Intn(len(c))
+	// take every value before cut from a
+	taken := map[int]bool{}
+	for i := 0; i < cut; i++ {
+		c[i] = a[i]
+		taken[a[i]] = true
+	}
+	// return index of next untaken value in b
+	nextFromB := func() int {
+		for bindex := 0; bindex < len(b); bindex++ {
+			_, exists := taken[b[bindex]]
+			if !exists {
+				return bindex
+			}
+		}
+		return -1
+	}
+	// fill gaps in c with untaken values from b
+	for i := cut; i < len(c); i++ {
+		nextBIndex := nextFromB()
+		taken[b[nextBIndex]] = true
+		c[i] = b[nextBIndex]
+	}
+	return c
+}
+
+// TwoPointPerm takes a slice of a and fills the gaps with values from b
 // while preserving order. 12345678 + 26371485 -> **3456** + 2**71*8* -> 27345618
-func OrderBasedCrossover(a, b []int) []int {
+func TwoPointPerm(a, b []int) []int {
 	if len(a) != len(b) {
 		panic("expected inputs to have same length")
 	}
