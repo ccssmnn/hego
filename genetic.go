@@ -55,10 +55,26 @@ type GeneticResult struct {
 	Result
 }
 
+// Selection encodes different selection variants
+type Selection int
+
+const (
+	// RankBasedSelection selects parents based on their rank (sorted by fitness)
+	RankBasedSelection Selection = iota
+	// TournamentSelection performs a tournament of randomly selected genomes
+	// and selects the winner
+	TournamentSelection
+	// FitnessProportionalSelection determines the chance of a genome to be
+	// selected by its fitness value compared to the total fitness of the population
+	FitnessProportionalSelection
+)
+
 // GeneticSettings represents the settings available in the genetic algorithm
 type GeneticSettings struct {
-	MutationRate float64
-	Elitism      int
+	Selection      Selection
+	TournamentSize int
+	MutationRate   float64
+	Elitism        int
 	Settings
 }
 
@@ -72,6 +88,9 @@ func (s *GeneticSettings) Verify() error {
 	}
 	if s.Elitism < 0 {
 		return errors.New("elitism represents the number of best genomes that survive one generation. It cannot be negative")
+	}
+	if s.Selection == TournamentSelection && s.TournamentSize < 2 {
+		return errors.New("When TournamentSelection is set, TournamentSize must be a value above 1")
 	}
 	return nil
 }
@@ -95,6 +114,71 @@ func (p *population) Less(i, j int) bool {
 
 func (p *population) Swap(i, j int) {
 	p.candidates[i], p.candidates[j] = p.candidates[j], p.candidates[i]
+}
+
+func (p *population) fitnessProportionalSelection(n int) []int {
+	worst := 0.0
+	for _, c := range p.candidates {
+		if c.fitness > worst {
+			worst = c.fitness
+		}
+	}
+	weights := make([]float64, len(p.candidates))
+	for i, c := range p.candidates {
+		weights[i] = math.Max(worst-c.fitness, 1e-10)
+	}
+	return weightedChoice(weights, n)
+}
+
+func (p *population) rankBasedSelection(n int) []int {
+	sort.Sort(p)
+	weights := make([]float64, len(p.candidates))
+	for i := range p.candidates {
+		weights[i] = float64(len(p.candidates) - i)
+	}
+	return weightedChoice(weights, n)
+}
+
+func tournament(weights []float64) int {
+	contesters := make([]int, len(weights))
+	for i := range contesters {
+		contesters[i] = i
+	}
+	for len(contesters) > 1 {
+		winners := make([]int, len(contesters)/2)
+		for i := range winners {
+			a, b := contesters[2*i], contesters[2*i+1]
+			// lower is better! we are minimizing
+			if weights[a] > weights[b] {
+				winners[i] = b
+			} else {
+				winners[i] = a
+			}
+		}
+		contesters = winners
+	}
+	return contesters[0]
+}
+
+func (p *population) tournamentSelection(n, size int) []int {
+	res := make([]int, n)
+	for i := range res {
+		// choose tournament candidates from population
+		indizes := make([]int, size)
+		for j := range indizes {
+			indizes[j] = rand.Intn(len(p.candidates))
+		}
+		// extract fitness from candidates
+		weights := make([]float64, size)
+		for j, index := range indizes {
+			weights[j] = p.candidates[index].fitness
+		}
+		// determine winner index, which is index in weights slice
+		winner := tournament(weights)
+		// assign population index to res
+		res[i] = indizes[winner]
+	}
+	return res
 }
 
 // Genetic Performs optimization. The optimization follows three steps:
@@ -138,9 +222,9 @@ func Genetic(
 		worstFitness := -bestFitness
 		bestIndex := -1
 
+		// evalutation of fitness function is independent for each genome
 		for idx, can := range pop.candidates {
 			wg.Add(1)
-			// evalutation of fitness function is independent for each genome
 			go func(idx int, can candidate) {
 				// skip fitness evaluation for elite
 				var fit float64
@@ -172,11 +256,16 @@ func Genetic(
 		}
 
 		// select parents
-		weights := make([]float64, populationSize)
-		for i := 0; i < populationSize; i++ {
-			weights[i] = math.Max(worstFitness-pop.candidates[i].fitness, 1e-10)
+		var parentIds []int
+		n := populationSize - settings.Elitism
+		switch settings.Selection {
+		case RankBasedSelection:
+			parentIds = pop.rankBasedSelection(n)
+		case TournamentSelection:
+			parentIds = pop.tournamentSelection(n, settings.TournamentSize)
+		case FitnessProportionalSelection:
+			parentIds = pop.fitnessProportionalSelection(n)
 		}
-		parentIds := weightedChoice(weights, populationSize-settings.Elitism)
 		parents := make([]GeneticGenome, len(parentIds))
 		for index, id := range parentIds {
 			parents[index] = pop.candidates[id].genome

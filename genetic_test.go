@@ -73,3 +73,11 @@ func TestWeightedChoice(t *testing.T) {
 		}
 	}
 }
+
+func TestTournament(t *testing.T) {
+	weights := []float64{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}
+	index := tournament(weights)
+	if index != 0 {
+		t.Errorf("expected index 0 to win the tournament, got %v", index)
+	}
+}
