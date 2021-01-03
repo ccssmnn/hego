@@ -136,6 +136,7 @@ func Genetic(
 		totalFitness := 0.0
 		bestFitness := math.MaxFloat64
 		worstFitness := -bestFitness
+		bestIndex := -1
 
 		for idx, can := range pop.candidates {
 			wg.Add(1)
@@ -152,6 +153,7 @@ func Genetic(
 				pop.candidates[idx].fitness = fit
 				if fit < bestFitness {
 					bestFitness = fit
+					bestIndex = idx
 				}
 				if fit > worstFitness {
 					worstFitness = fit
@@ -163,6 +165,7 @@ func Genetic(
 
 		res.AveragedFitness = append(res.AveragedFitness, totalFitness/float64(populationSize))
 		res.BestFitness = append(res.BestFitness, bestFitness)
+		res.BestGenome = append(res.BestGenome, pop.candidates[bestIndex].genome)
 
 		if settings.Elitism > 0 {
 			sort.Sort(&pop)
