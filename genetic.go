@@ -23,6 +23,9 @@ func weightedChoice(weights []float64, n int) []int {
 	for _, weight := range weights {
 		total += weight
 	}
+	if total == 0.0 {
+		return []int{-1}
+	}
 	indizes := make([]int, 0, n)
 	for len(indizes) < n {
 		r := rand.Float64() * total
