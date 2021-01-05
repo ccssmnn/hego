@@ -18,10 +18,10 @@ Currently the following algorithms are implemented:
 
 - Simulated Annealing (SA)
 - Genetic Algorithm (GA)
+- Ant Colony Optimization (ACO)
 
 These are in our scope (TODO):
 
-- Ant Colony Optimization (ACO), good for permutation based problems
 - Glowworm Swarm Optimization (GSO), nice for finding multiple local minima
 - Evolutionary Strategies (ES), good for real-valued functions
 - Memetic Algorithm (MA), Genetic Algorithm + Local Search
