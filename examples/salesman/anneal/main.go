@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/ccssmnn/hego"
 	"github.com/ccssmnn/hego/mutate"
@@ -37,57 +36,56 @@ func readDistances() error {
 	return nil
 }
 
-type state struct {
-	tour []int
+// state represents a tour of cities
+type state []int
+
+// Neighbor produces a similar tour by swapping two cities in a tour
+func (s state) Neighbor() hego.AnnealingState {
+	return state(mutate.Swap(s))
 }
 
-func (s *state) Neighbor() hego.AnnealState {
-	neighbor := &state{tour: []int{}}
-	neighbor.tour = mutate.Swap(s.tour)
-	return neighbor
-}
-
-func (s *state) Energy() float64 {
+// Energy counts the total tour length
+func (s state) Energy() float64 {
 	cost := 0.0
-	position := s.tour[0]
-	for _, next := range s.tour {
+	position := s[0]
+	for _, next := range s {
 		cost += distances[position][next]
 		position = next
 	}
-	cost += distances[position][s.tour[0]]
+	cost += distances[position][s[0]]
 	return cost
 }
 
 func main() {
+	// read problem file
 	err := readDistances()
 	if err != nil {
 		fmt.Printf("failed to read distances: %v", err)
 		return
 	}
-	initialState := state{
-		tour: make([]int, 0),
-	}
-	for i := 0; i < 48; i++ {
-		initialState.tour = append(initialState.tour, i)
-	}
 
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(initialState.tour), func(i, j int) {
-		initialState.tour[i], initialState.tour[j] = initialState.tour[j], initialState.tour[i]
+	// produce one initial tour
+	initialState := make(state, 48)
+	for i := range initialState {
+		initialState[i] = i
+	}
+	rand.Shuffle(len(initialState), func(i, j int) {
+		initialState[i], initialState[j] = initialState[j], initialState[i]
 	})
 
-	settings := hego.AnnealSettings{}
+	// set algorithm parameters
+	settings := hego.SASettings{}
 	settings.MaxIterations = 1000000
-	settings.Verbose = 100000
-	settings.Temperature = 100000.0
-	settings.AnnealingFactor = 0.99999
+	settings.Verbose = settings.MaxIterations / 10 // log 10 times during the process
+	settings.Temperature = 100000.0                // choose temperature in the range of initial random guesses energies
+	settings.AnnealingFactor = 0.99999             // choose AnnealingFactor to make temperature reach low values at the end of the process
 
-	result, err := hego.Anneal(&initialState, settings)
+	// start simulated annealing
+	result, err := hego.SA(&initialState, settings)
 
 	if err != nil {
 		fmt.Printf("Got error while running Anneal: %v", err)
-	} else {
-		fmt.Printf("Finished Annealing in %v! Result: %v, Value: %v \n", result.Runtime, result.States[result.Iterations], result.Energies[result.Iterations])
 	}
+	fmt.Printf("Finished Annealing in %v!, Tour Length: %v \n", result.Runtime, result.Energies[result.Iterations])
 	return
 }

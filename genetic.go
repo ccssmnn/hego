@@ -40,21 +40,20 @@ func weightedChoice(weights []float64, n int) []int {
 	return indizes
 }
 
-// GeneticGenome represents a genome (candidate) in the genetic algorithm
+// Genome represents a genome (candidate) in the genetic algorithm
 // Fitness returns the objective value, Mutate returns a mutated new genome
 // and Crossover merges two genomes and returns the child genome
-type GeneticGenome interface {
+type Genome interface {
 	Fitness() float64
-	Mutate() GeneticGenome
-	Crossover(other GeneticGenome) GeneticGenome
-	GetGene() []interface{}
+	Mutate() Genome
+	Crossover(other Genome) Genome
 }
 
-// GeneticResult represents the result of the genetic algorithm
-type GeneticResult struct {
+// GAResult represents the result of the genetic algorithm
+type GAResult struct {
 	AveragedFitness []float64
 	BestFitness     []float64
-	BestGenome      []GeneticGenome
+	BestGenome      []Genome
 	Result
 }
 
@@ -72,8 +71,8 @@ const (
 	FitnessProportionalSelection
 )
 
-// GeneticSettings represents the settings available in the genetic algorithm
-type GeneticSettings struct {
+// GASettings represents the settings available in the genetic algorithm
+type GASettings struct {
 	Selection      Selection
 	TournamentSize int
 	MutationRate   float64
@@ -82,7 +81,7 @@ type GeneticSettings struct {
 }
 
 // Verify returns an error, if settings are not valid
-func (s *GeneticSettings) Verify() error {
+func (s *GASettings) Verify() error {
 	if s.MaxIterations < 1 {
 		return fmt.Errorf("MaxIterations must be greater than 0, not %v", s.MaxIterations)
 	}
@@ -99,7 +98,7 @@ func (s *GeneticSettings) Verify() error {
 }
 
 type candidate struct {
-	genome  GeneticGenome
+	genome  Genome
 	fitness float64
 }
 
@@ -184,14 +183,14 @@ func (p *population) tournamentSelection(n, size int) []int {
 	return res
 }
 
-// Genetic Performs optimization. The optimization follows three steps:
+// GA Performs optimization. The optimization follows three steps:
 // - for current population calculate fitness
 // - select chromosomes with best fitness values with higher propability as parents
 // - use parents for reproduction (crossover and mutation)
-func Genetic(
-	initialPopulation []GeneticGenome,
-	settings GeneticSettings,
-) (res GeneticResult, err error) {
+func GA(
+	initialPopulation []Genome,
+	settings GASettings,
+) (res GAResult, err error) {
 	populationSize := len(initialPopulation)
 	err = settings.Verify()
 	if err != nil {
@@ -199,7 +198,7 @@ func Genetic(
 		return
 	}
 	// increase FuncEvaluations for every fitness call
-	evaluate := func(g GeneticGenome) float64 {
+	evaluate := func(g Genome) float64 {
 		res.FuncEvaluations++
 		return g.Fitness()
 	}
@@ -269,7 +268,7 @@ func Genetic(
 		case FitnessProportionalSelection:
 			parentIds = pop.fitnessProportionalSelection(n)
 		}
-		parents := make([]GeneticGenome, len(parentIds))
+		parents := make([]Genome, len(parentIds))
 		for index, id := range parentIds {
 			parents[index] = pop.candidates[id].genome
 		}
@@ -281,7 +280,7 @@ func Genetic(
 			go func(idx int) {
 				a, b := rand.Intn(len(parents)), rand.Intn(len(parents))
 				child := parents[a].Crossover(parents[b])
-				if rand.Float64() > settings.MutationRate {
+				if rand.Float64() < settings.MutationRate {
 					pop.candidates[idx].genome = child.Mutate()
 				} else {
 					pop.candidates[idx].genome = child
