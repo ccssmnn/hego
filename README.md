@@ -45,6 +45,7 @@ func rastringin(x, y float64) float64 {
 
 // genome is a vector of float values
 type genome []float64
+<<<<<<< HEAD
 
 // Crossover returns a child genome which is a combination of the current and other
 // genome. Here an the Arithmetic crossover operation is used
@@ -57,6 +58,22 @@ func (g genome) Mutate() hego.Genome {
 	return genome(mutate.Gauss(g, 0.5))
 }
 
+=======
+
+// Crossover returns a child genome which is a combination of the current and other
+// genome. Here an the Arithmetic crossover operation is used
+func (g genome) Crossover(other hego.Genome) hego.Genome {
+	child := genome(crossover.Arithmetic(g, *other.(*genome), [2]float64{-0.5, 1.5}))
+	return &child
+}
+
+// Mutate adds variation to a genome. In this case we add gaussian noise
+func (g genome) Mutate() hego.Genome {
+	mutant := genome(mutate.Gauss(g, 0.5))
+	return &mutant
+}
+
+>>>>>>> b429d661041a7adbd345995f54c15f84c74acebb
 // Fitness is called to evaluate the objective functino value. Lower is better
 func (g genome) Fitness() float64 {
 	return rastringin(g[0], g[1])
@@ -66,7 +83,11 @@ func main() {
 	// initialize population
 	population := make([]hego.Genome, 100)
 	for i := range population {
+<<<<<<< HEAD
 		population[i] = genome{-10.0 + 10.0*rand.Float64(), -10 + 10*rand.Float64()}
+=======
+		population[i] = &genome{-10.0 + 10.0*rand.Float64(), -10 + 10*rand.Float64()}
+>>>>>>> b429d661041a7adbd345995f54c15f84c74acebb
 	}
 
 	// set algorithm behaviour here
@@ -85,7 +106,11 @@ func main() {
 	}
 
 	// extract solution and print result
+<<<<<<< HEAD
 	solution := result.BestGenome[result.Iterations-1].(genome)
+=======
+	solution := *result.BestGenome[result.Iterations-1].(*genome)
+>>>>>>> b429d661041a7adbd345995f54c15f84c74acebb
 	value := result.BestFitness[result.Iterations-1]
 	fmt.Printf("Finished Genetic Algorithm in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
 	fmt.Printf("Minimum found at x = [%v, %v] with f(x) = %v\n", solution[0], solution[1], value)
