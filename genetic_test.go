@@ -72,7 +72,7 @@ func TestGenetic(t *testing.T) {
 
 	// retry with 100% mutation rate
 	settings.MutationRate = 1.0
-	res, err = GA(population, settings)
+	res, _ = GA(population, settings)
 	expectedMutateCount := settings.MaxIterations*populationSize - settings.Elitism
 	if mutateCount != expectedCrossoverCount {
 		t.Errorf("unexpected number of mutate operations: Expected %v, got %v", expectedMutateCount, mutateCount)

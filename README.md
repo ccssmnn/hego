@@ -26,8 +26,6 @@ These are in our scope (TODO):
 - Evolutionary Strategies (ES), good for real-valued functions
 - Memetic Algorithm (MA), Genetic Algorithm + Local Search
 
-## Usage
-
 All algorithms are implement for finding minimum values.
 
 The following examples show how to use hego to find solutions for the [Rastringin function](https://en.wikipedia.org/wiki/Rastrigin_function).
