@@ -37,74 +37,69 @@ func readDistances() error {
 	return nil
 }
 
-type genome struct {
-	tour []int
+// genome is a slice of integers. Each element encodes a city and the order encodes the tour
+type genome []int
+
+// Mutate uses Swap to swap two cities in the tour
+func (g genome) Mutate() hego.Genome {
+	return genome(mutate.Swap(g))
 }
 
-func (g *genome) GetGene() []interface{} {
-	gene := make([]interface{}, len(g.tour))
-	for i := range gene {
-		gene[i] = g.tour[i]
-	}
-	return gene
+func (g genome) Crossover(other hego.Genome) hego.Genome {
+	return genome(crossover.TwoPointPerm(g, other.(genome)))
 }
 
-func (g *genome) Mutate() hego.GeneticGenome {
-	new := &genome{}
-	new.tour = mutate.Swap(g.tour)
-	return new
-}
-
-func (g *genome) Crossover(other hego.GeneticGenome) hego.GeneticGenome {
-	new := &genome{}
-	gene := hego.ConvertInt(other.GetGene())
-	new.tour = crossover.TwoPointPerm(g.tour, gene)
-	return new
-}
-
-func (g *genome) Fitness() float64 {
+func (g genome) Fitness() float64 {
 	cost := 0.0
-	position := g.tour[0]
-	for _, next := range g.tour {
+	position := g[0]
+	for _, next := range g {
 		cost += distances[position][next]
 		position = next
 	}
-	cost += distances[position][g.tour[0]]
+	cost += distances[position][g[0]]
 	return cost
 }
 
 func main() {
+	// read distances from text file
 	err := readDistances()
 	if err != nil {
 		fmt.Printf("failed to read distances: %v", err)
 		return
 	}
-	tour := make([]int, 0)
+
+	// initialTour is counting up from zero {0, 1, 2, 3, ...}
+	initialTour := make([]int, 0)
 	for i := 0; i < 48; i++ {
-		tour = append(tour, i)
+		initialTour = append(initialTour, i)
 	}
 
-	population := make([]hego.GeneticGenome, 100)
-	for i := range population {
-		t := make([]int, len(tour))
-		copy(t, tour)
-		rand.Shuffle(len(t), func(i, j int) { t[i], t[j] = t[j], t[i] })
-		population[i] = &genome{tour: t}
-	}
-
-	settings := hego.GeneticSettings{}
+	// these are the algorithm parameters to tweak for your problem
+	settings := hego.GASettings{}
 	settings.Selection = hego.RankBasedSelection
 	settings.MutationRate = 0.5
-	settings.Elitism = 1
-	settings.MaxIterations = 10000
-	settings.Verbose = 1000
+	settings.Elitism = 5
+	settings.MaxIterations = 1000
+	settings.Verbose = 100
+	populationSize := 200
 
-	result, err := hego.Genetic(population, settings)
+	// initialize population
+	population := make([]hego.Genome, populationSize)
+	for i := range population {
+		// create a new randomized tour and add it to population
+		tour := make(genome, len(initialTour))
+		copy(tour, initialTour)
+		rand.Shuffle(len(tour), func(i, j int) { tour[i], tour[j] = tour[j], tour[i] })
+		population[i] = tour
+	}
+
+	// perform genetic algorithm
+	result, err := hego.GA(population, settings)
 
 	if err != nil {
 		fmt.Printf("Got error while running Genetic Algorithm: %v", err)
-	} else {
-		fmt.Printf("Finished Genetic Algorithm in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
+		return
 	}
+	fmt.Printf("Finished Genetic Algorithm in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
 	return
 }

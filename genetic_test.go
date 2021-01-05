@@ -5,58 +5,77 @@ import (
 	"testing"
 )
 
+var crossoverCount int
+var fitnessCount int
+var mutateCount int
+
 type genome struct {
-	state []bool
+	state [10]bool
 }
 
-func (b *genome) Crossover(other GeneticGenome) GeneticGenome {
-	clone := genome{state: make([]bool, len(b.state))}
-	copy(clone.state, b.state)
-	return &clone
+func (b genome) Crossover(other Genome) Genome {
+	crossoverCount++
+	return b
 }
 
-func (b *genome) Fitness() float64 {
-	return rand.Float64()
+func (b genome) Fitness() float64 {
+	fitnessCount++
+	return 1.0
 }
 
-func (b *genome) Mutate() GeneticGenome {
-	n := genome{state: make([]bool, len(b.state))}
-	for i := range n.state {
-		n.state[i] = rand.Float64() < 0.5
-	}
-	return &n
-}
-
-func (b *genome) GetGene() []interface{} {
-	gene := make([]interface{}, len(b.state))
-	for i, value := range b.state {
-		gene[i] = value
-	}
-	return gene
+func (b genome) Mutate() Genome {
+	mutateCount++
+	return b
 }
 
 func TestGenetic(t *testing.T) {
-	population := make([]GeneticGenome, 0)
-	for i := 0; i < 10; i++ {
+
+	settings := GASettings{}
+	settings.MutationRate = 0.0
+	settings.Elitism = 0
+	settings.MaxIterations = 10
+	settings.Verbose = 0
+	populationSize := 10
+
+	population := make([]Genome, populationSize)
+	for i := range population {
 		candidate := genome{}
 		for index := range candidate.state {
 			candidate.state[index] = rand.Float64() > 0.5
 		}
-		population = append(population, &candidate)
+		population[i] = candidate
 	}
 
-	settings := GeneticSettings{}
-	settings.MutationRate = 0.5
-	settings.Elitism = 1
-	settings.MaxIterations = 10
-	settings.Verbose = 0
+	crossoverCount = 0
+	fitnessCount = 0
+	mutateCount = 0
 
-	res, err := Genetic(population, settings)
+	res, err := GA(population, settings)
+
 	if err != nil {
 		t.Errorf("Error while running Anneal main algorithm: %v", err)
 	}
-	if len(res.BestFitness) != settings.MaxIterations {
-		t.Errorf("Wrong number of states received: expected %v, got %v", settings.MaxIterations, len(res.BestFitness))
+	if res.Iterations != settings.MaxIterations {
+		t.Errorf("unexpected number of iterations. Expected %v, got %v", settings.MaxIterations, res.Iterations)
+	}
+	expectedCrossoverCount := settings.MaxIterations*populationSize - settings.Elitism
+	if crossoverCount != expectedCrossoverCount {
+		t.Errorf("unexpected number of crossover operations: Expected %v, got %v", expectedCrossoverCount, crossoverCount)
+	}
+	expectedFitnessCount := settings.MaxIterations*populationSize - settings.Elitism
+	if crossoverCount != expectedFitnessCount {
+		t.Errorf("unexpected number of fitness calls: Expected %v, got %v", expectedFitnessCount, fitnessCount)
+	}
+	if mutateCount != 0 {
+		t.Errorf("unexpected number of mutate operations: Expected %v, got %v", 0, mutateCount)
+	}
+
+	// retry with 100% mutation rate
+	settings.MutationRate = 1.0
+	res, err = GA(population, settings)
+	expectedMutateCount := settings.MaxIterations*populationSize - settings.Elitism
+	if mutateCount != expectedCrossoverCount {
+		t.Errorf("unexpected number of mutate operations: Expected %v, got %v", expectedMutateCount, mutateCount)
 	}
 }
 
