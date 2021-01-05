@@ -24,3 +24,15 @@ func TestTwoPointPerm(t *testing.T) {
 		}
 	}
 }
+
+func TestOnePointPerm(t *testing.T) {
+	a := []int{1, 2, 3, 4, 5, 6, 7, 8}
+	b := []int{8, 7, 6, 5, 4, 3, 2, 1}
+	c := OnePointPerm(a, b)
+	for _, v := range a {
+		appearances := findInSlice(v, c)
+		if appearances != 1 {
+			t.Errorf("unexpected number of appearances in crossover result. Got %v, expected 1", appearances)
+		}
+	}
+}

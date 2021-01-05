@@ -7,7 +7,6 @@ import (
 	"math/rand"
 	"os"
 	"sort"
-	"sync"
 	"text/tabwriter"
 	"time"
 )
@@ -23,13 +22,17 @@ func weightedChoice(weights []float64, n int) []int {
 	for _, weight := range weights {
 		total += weight
 	}
-	indizes := make([]int, 0, n)
-	for len(indizes) < n {
+	if total == 0.0 {
+		return []int{-1}
+	}
+	indizes := make([]int, n)
+	for i := range indizes {
+		indizes[i] = -1
 		r := rand.Float64() * total
-		for i, weight := range weights {
+		for j, weight := range weights {
 			r -= weight
 			if r <= 0.0 {
-				indizes = append(indizes, i)
+				indizes[i] = j
 				break
 			}
 		}
@@ -99,41 +102,39 @@ type candidate struct {
 	fitness float64
 }
 
-type population struct {
-	candidates []candidate
+type population []candidate
+
+func (p population) Len() int {
+	return len(p)
 }
 
-func (p *population) Len() int {
-	return len(p.candidates)
+func (p population) Less(i, j int) bool {
+	return p[i].fitness < p[j].fitness
 }
 
-func (p *population) Less(i, j int) bool {
-	return p.candidates[i].fitness < p.candidates[j].fitness
+func (p population) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
 }
 
-func (p *population) Swap(i, j int) {
-	p.candidates[i], p.candidates[j] = p.candidates[j], p.candidates[i]
-}
-
-func (p *population) fitnessProportionalSelection(n int) []int {
+func (p population) fitnessProportionalSelection(n int) []int {
 	worst := 0.0
-	for _, c := range p.candidates {
+	for _, c := range p {
 		if c.fitness > worst {
 			worst = c.fitness
 		}
 	}
-	weights := make([]float64, len(p.candidates))
-	for i, c := range p.candidates {
+	weights := make([]float64, len(p))
+	for i, c := range p {
 		weights[i] = math.Max(worst-c.fitness, 1e-10)
 	}
 	return weightedChoice(weights, n)
 }
 
-func (p *population) rankBasedSelection(n int) []int {
+func (p population) rankBasedSelection(n int) []int {
 	sort.Sort(p)
-	weights := make([]float64, len(p.candidates))
-	for i := range p.candidates {
-		weights[i] = float64(len(p.candidates) - i)
+	weights := make([]float64, len(p))
+	for i := range p {
+		weights[i] = float64(len(p) - i)
 	}
 	return weightedChoice(weights, n)
 }
@@ -159,18 +160,18 @@ func tournament(weights []float64) int {
 	return contesters[0]
 }
 
-func (p *population) tournamentSelection(n, size int) []int {
+func (p population) tournamentSelection(n, size int) []int {
 	res := make([]int, n)
 	for i := range res {
 		// choose tournament candidates from population
 		indizes := make([]int, size)
 		for j := range indizes {
-			indizes[j] = rand.Intn(len(p.candidates))
+			indizes[j] = rand.Intn(len(p))
 		}
 		// extract fitness from candidates
 		weights := make([]float64, size)
 		for j, index := range indizes {
-			weights[j] = p.candidates[index].fitness
+			weights[j] = p[index].fitness
 		}
 		// determine winner index, which is index in weights slice
 		winner := tournament(weights)
@@ -178,6 +179,20 @@ func (p *population) tournamentSelection(n, size int) []int {
 		res[i] = indizes[winner]
 	}
 	return res
+}
+
+func (p population) selectParents(settings *GASettings) []int {
+	n := len(p) - settings.Elitism
+	var parentIds []int
+	switch settings.Selection {
+	case RankBasedSelection:
+		parentIds = p.rankBasedSelection(n)
+	case TournamentSelection:
+		parentIds = p.tournamentSelection(n, settings.TournamentSize)
+	case FitnessProportionalSelection:
+		parentIds = p.fitnessProportionalSelection(n)
+	}
+	return parentIds
 }
 
 // GA Performs optimization. The optimization follows three steps:
@@ -188,7 +203,6 @@ func GA(
 	initialPopulation []Genome,
 	settings GASettings,
 ) (res GAResult, err error) {
-	populationSize := len(initialPopulation)
 	err = settings.Verify()
 	if err != nil {
 		err = fmt.Errorf("settings verification failed: %v", err)
@@ -203,105 +217,76 @@ func GA(
 	start := time.Now()
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, []byte(" ")[0], tabwriter.AlignRight)
+
+	// logger will log intermediate status data into writer, does nothing when not verbose
+	logger := func(i int, avg, best float64) {}
+	// flusher will flush writer to stdout if verbose
+	flusher := func() {}
+
 	if settings.Verbose > 0 {
 		fmt.Println("Starting Genetic Algorithm...")
 		fmt.Fprintln(w, "Iteration\tAverage Fitness\tBest Fitness\t")
+
+		logger = func(i int, avg, best float64) {
+			if i%settings.Verbose == 0 || i+1 == settings.MaxIterations {
+				fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, res.AveragedFitness[i], res.BestFitness[i])
+			}
+		}
+
+		flusher = func() {
+			w.Flush()
+			fmt.Printf("DONE after %v\n", res.Runtime)
+		}
 	}
 
-	pop := population{candidates: make([]candidate, len(initialPopulation))}
+	pop := make(population, len(initialPopulation))
 	for i := range initialPopulation {
-		pop.candidates[i].genome = initialPopulation[i]
+		pop[i].genome = initialPopulation[i]
+		pop[i].fitness = evaluate(pop[i].genome)
 	}
+
+	res.AveragedFitness = make([]float64, settings.MaxIterations)
+	res.BestFitness = make([]float64, settings.MaxIterations)
+	res.BestGenome = make([]Genome, settings.MaxIterations)
 
 	for i := 0; i < settings.MaxIterations; i++ {
-		wg := sync.WaitGroup{}
-		// calculate fitness
+		// FITNESS EVALUATION
 		totalFitness := 0.0
 		bestFitness := math.MaxFloat64
-		worstFitness := -bestFitness
 		bestIndex := -1
-
-		// evalutation of fitness function is independent for each genome
-		for idx, can := range pop.candidates {
-			wg.Add(1)
-			go func(idx int, can candidate) {
-				// skip fitness evaluation for elite
-				var fit float64
-				if i != 0 && idx < settings.Elitism {
-					fit = pop.candidates[idx].fitness
-				} else {
-					fit = evaluate(can.genome)
-				}
-				totalFitness += fit
-				pop.candidates[idx].fitness = fit
-				if fit < bestFitness {
-					bestFitness = fit
-					bestIndex = idx
-				}
-				if fit > worstFitness {
-					worstFitness = fit
-				}
-				wg.Done()
-			}(idx, can)
+		for idx, g := range pop {
+			totalFitness += g.fitness
+			if g.fitness < bestFitness {
+				bestFitness = g.fitness
+				bestIndex = idx
+			}
 		}
-		wg.Wait()
+		res.AveragedFitness[i] = totalFitness / float64(len(pop))
+		res.BestFitness[i] = bestFitness
+		res.BestGenome[i] = pop[bestIndex].genome
+		logger(i, res.AveragedFitness[i], res.BestFitness[i])
 
-		res.AveragedFitness = append(res.AveragedFitness, totalFitness/float64(populationSize))
-		res.BestFitness = append(res.BestFitness, bestFitness)
-		res.BestGenome = append(res.BestGenome, pop.candidates[bestIndex].genome)
+		// SELECTION
+		parentIds := pop.selectParents(&settings)
 
+		// CROSSOVER & MUTATION
+		// TODO: for elitism << len(pop) it is more efficient to extract smallest n instead of sorting
 		if settings.Elitism > 0 {
 			sort.Sort(&pop)
 		}
-
-		// select parents
-		var parentIds []int
-		n := populationSize - settings.Elitism
-		switch settings.Selection {
-		case RankBasedSelection:
-			parentIds = pop.rankBasedSelection(n)
-		case TournamentSelection:
-			parentIds = pop.tournamentSelection(n, settings.TournamentSize)
-		case FitnessProportionalSelection:
-			parentIds = pop.fitnessProportionalSelection(n)
+		for idx := settings.Elitism; idx < len(pop); idx++ {
+			parent1 := pop[parentIds[rand.Intn(len(parentIds))]].genome
+			parent2 := pop[parentIds[rand.Intn(len(parentIds))]].genome
+			if rand.Float64() < settings.MutationRate {
+				pop[idx].genome = parent1.Crossover(parent2).Mutate()
+			} else {
+				pop[idx].genome = parent1.Crossover(parent2)
+			}
+			pop[idx].fitness = evaluate(pop[idx].genome)
 		}
-		parents := make([]Genome, len(parentIds))
-		for index, id := range parentIds {
-			parents[index] = pop.candidates[id].genome
-		}
-
-		// perform crossover and mutation
-		for idx := settings.Elitism; idx < populationSize; idx++ {
-			// crossover and mutation is independent
-			wg.Add(1)
-			go func(idx int) {
-				a, b := rand.Intn(len(parents)), rand.Intn(len(parents))
-				child := parents[a].Crossover(parents[b])
-				if rand.Float64() < settings.MutationRate {
-					pop.candidates[idx].genome = child.Mutate()
-				} else {
-					pop.candidates[idx].genome = child
-				}
-				pop.candidates[idx].fitness = math.MaxFloat64
-				wg.Done()
-			}(idx)
-		}
-		wg.Wait()
-
-		if settings.Verbose > 0 && (i%settings.Verbose == 0 || i+1 == settings.MaxIterations) {
-			fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, res.AveragedFitness[i], res.BestFitness[i])
-		}
+		res.Iterations++
 	}
-
-	if settings.Verbose > 0 {
-		w.Flush()
-	}
-
-	end := time.Now()
-	res.Runtime = end.Sub(start)
-	if settings.Verbose > 0 {
-		fmt.Printf("DONE after %v\n", res.Runtime)
-	}
-	res.Iterations = settings.MaxIterations
-	return
+	flusher()
+	res.Runtime = time.Now().Sub(start)
+	return res, nil
 }
