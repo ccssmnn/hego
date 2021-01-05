@@ -5,33 +5,27 @@ import (
 	"testing"
 )
 
-type bitState struct {
-	state []bool
-}
+type state []bool
 
-func (b *bitState) Energy() float64 {
+func (b state) Energy() float64 {
 	return rand.Float64()
 }
 
-func (b *bitState) Neighbor() AnnealState {
-	n := bitState{state: make([]bool, len(b.state))}
-	for i := range n.state {
-		n.state[i] = rand.Float64() < 0.5
-	}
-	return &n
+func (b state) Neighbor() AnnealingState {
+	return b
 }
 
 // TestAnnealBit runs the AnnealBit method and checks for errors
-func TestAnneal(t *testing.T) {
-	initialState := bitState{state: []bool{false, true, false}}
+func TestSA(t *testing.T) {
+	initialState := state{false, true, false}
 
-	settings := AnnealSettings{}
+	settings := SASettings{}
 	settings.Temperature = 100.0
 	settings.AnnealingFactor = 0.9
 	settings.MaxIterations = 10
 	settings.Verbose = 0
 
-	res, err := Anneal(&initialState, settings)
+	res, err := SA(initialState, settings)
 	if err != nil {
 		t.Errorf("Error while running Anneal main algorithm: %v", err)
 	}

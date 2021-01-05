@@ -9,31 +9,42 @@ import (
 	"time"
 )
 
-// AnnealState represents the current state of the annealing system. Energy is the
+// AnnealingState represents the current state of the annealing system. Energy is the
 // value of the objective function. Neighbor returns another state candidate
-type AnnealState interface {
+type AnnealingState interface {
 	Energy() float64
-	Neighbor() AnnealState
+	Neighbor() AnnealingState
 }
 
-// AnnealResult represents the result of the Anneal optimization. The last state
+// SAResult represents the result of the Anneal optimization. The last state
 // and last energy are the final results. It extends the basic Result type
-type AnnealResult struct {
-	States   []AnnealState
+type SAResult struct {
+	// States hold every state during the process
+	States []AnnealingState
+	// Energies hold the energy value of every state in the process
 	Energies []float64
 	Result
 }
 
-// AnnealSettings represents the algorithm settings for the simulated annealing
+// SASettings represents the algorithm settings for the simulated annealing
 // optimization
-type AnnealSettings struct {
-	Temperature     float64
+type SASettings struct {
+	// Temperature is used to determine if another state will be selected or not
+	// better states are selected with probability 1, but worse states are selected
+	// propability p = exp(state_energy - candidate_energy/temperature)
+	// a good value for Temperature is in the range of randomly guessed state energies
+	Temperature float64
+	// AnnealingFactor is used to decrease the temperature after each iteration
+	// When temperature reaches 0, only better states will be accepted which leads
+	// to local search / convergence. Thus AnnealingFactor controls after how many
+	// iterations convergence might be reached. It's good to reach low temperatures
+	// during the last third of iterations
 	AnnealingFactor float64
 	Settings
 }
 
 // Verify returns an error if settings verification fails
-func (s *AnnealSettings) Verify() error {
+func (s *SASettings) Verify() error {
 	if s.MaxIterations <= 0 {
 		return fmt.Errorf("iterations must be greater that 0, got %v", s.MaxIterations)
 	}
@@ -46,11 +57,11 @@ func (s *AnnealSettings) Verify() error {
 	return nil
 }
 
-// Anneal performs simulated annealing
-func Anneal(
-	initialState AnnealState,
-	settings AnnealSettings,
-) (res AnnealResult, err error) {
+// SA performs simulated annealing algorithm
+func SA(
+	initialState AnnealingState,
+	settings SASettings,
+) (res SAResult, err error) {
 
 	err = settings.Verify()
 	if err != nil {
@@ -58,7 +69,7 @@ func Anneal(
 		return
 	}
 
-	evaluate := func(s AnnealState) float64 {
+	evaluate := func(s AnnealingState) float64 {
 		res.FuncEvaluations++
 		return s.Energy()
 	}
@@ -113,6 +124,5 @@ func Anneal(
 		w.Flush()
 		fmt.Printf("DONE after %v\n", res.Runtime)
 	}
-
 	return
 }
