@@ -57,8 +57,7 @@ func main() {
 
 	// extract solution and print result
 	solution := result.BestGenome[result.Iterations-1].(genome)
-	value := result.BestFitness[result.Iterations-1]
 	fmt.Printf("Finished Genetic Algorithm in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
-	fmt.Printf("Minimum found at x = [%v, %v] with f(x) = %v\n", solution[0], solution[1], value)
+	fmt.Printf("Minimum found at x = [%v, %v] with f(x) = %v\n", solution[0], solution[1], rastringin(solution[0], solution[1]))
 	return
 }
