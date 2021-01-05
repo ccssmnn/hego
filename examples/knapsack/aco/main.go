@@ -39,13 +39,22 @@ func (a *ant) Init() {
 	a.selection = make([]bool, len(weights))
 }
 
-func (a *ant) Step(next int) {
+func (a *ant) Step(next int) bool {
 	a.weight += weights[next]
 	a.value += values[next]
 	a.selection[next] = true
+	anotherStepPossible := false
+	for i, choice := range a.selection {
+		if !choice {
+			if a.weight+weights[i] < maxWeight {
+				anotherStepPossible = true
+			}
+		}
+	}
+	return !anotherStepPossible
 }
 
-func (a *ant) Pheromones() []float64 {
+func (a *ant) PerceivePheromone() []float64 {
 	res := make([]float64, len(pheromones))
 	copy(res, pheromones)
 	// do not take items that are already taken
@@ -63,10 +72,10 @@ func (a *ant) Pheromones() []float64 {
 	return res
 }
 
-func (a *ant) UpdatePheromones(performance float64) {
+func (a *ant) DropPheromone(performance float64) {
 	for index, choice := range a.selection {
 		if choice {
-			pheromones[index] += 1.0
+			pheromones[index] += 0.2
 		}
 	}
 }
@@ -75,16 +84,6 @@ func (a *ant) Evaporate(factor, min float64) {
 	for i := range pheromones {
 		pheromones[i] = math.Max(min, pheromones[i]*factor)
 	}
-}
-
-func (a *ant) Done() bool {
-	count := 0
-	for _, choice := range a.selection {
-		if choice {
-			count++
-		}
-	}
-	return count == len(weights) || a.weight == maxWeight
 }
 
 func (a *ant) Performance() float64 {
@@ -96,16 +95,16 @@ func main() {
 	for i := range pheromones {
 		pheromones[i] = 1.0
 	}
-	population := make([]hego.Ant, 100)
+	population := make([]hego.Ant, 10)
 	for i := range population {
 		population[i] = &ant{}
 	}
 
 	settings := hego.ACOSettings{}
-	settings.Evaporation = 0.99
-	settings.MinPheromone = 0.1
-	settings.MaxIterations = 1000
-	settings.Verbose = 100
+	settings.Evaporation = 0.95
+	settings.MinPheromone = 0.01
+	settings.MaxIterations = 100
+	settings.Verbose = settings.MaxIterations / 10
 
 	result, err := hego.ACO(population, settings)
 

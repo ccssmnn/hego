@@ -51,12 +51,13 @@ func (a *ant) Init() {
 	a.tour = []int{0}
 }
 
-func (a *ant) Step(next int) {
+func (a *ant) Step(next int) bool {
 	a.position = next
 	a.tour = append(a.tour, next)
+	return len(a.tour) == 48
 }
 
-func (a *ant) Pheromones() []float64 {
+func (a *ant) PerceivePheromone() []float64 {
 	p := pheromones[a.position]
 	res := make([]float64, len(p))
 	copy(res, p)
@@ -67,7 +68,7 @@ func (a *ant) Pheromones() []float64 {
 	return res
 }
 
-func (a *ant) UpdatePheromones(performance float64) {
+func (a *ant) DropPheromone(performance float64) {
 	for i := range a.tour {
 		if i == len(a.tour)-1 {
 			continue
@@ -84,14 +85,6 @@ func (a *ant) Evaporate(factor, min float64) {
 			pheromones[i][j] = math.Max(min, pheromones[i][j]*factor)
 		}
 	}
-}
-
-func (a *ant) Done() bool {
-	if len(a.tour) == 48 {
-		a.tour = append(a.tour, 0)
-		return true
-	}
-	return false
 }
 
 func (a *ant) Performance() float64 {
@@ -126,7 +119,7 @@ func main() {
 	settings.Evaporation = 0.9
 	settings.MinPheromone = 0.001
 	settings.MaxIterations = 1000
-	settings.Verbose = 100
+	settings.Verbose = settings.MaxIterations / 10
 
 	result, err := hego.ACO(population, settings)
 

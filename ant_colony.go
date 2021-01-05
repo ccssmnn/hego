@@ -12,11 +12,10 @@ import (
 // Ant is the individuum in the population based Ant Colony Optimization (ACO)
 type Ant interface {
 	Init()
-	Step(next int)
-	Pheromones() []float64
-	UpdatePheromones(performance float64)
+	Step(next int) bool
+	PerceivePheromone() []float64
+	DropPheromone(performance float64)
 	Evaporate(factor, min float64)
-	Done() bool
 	Performance() float64
 }
 
@@ -87,13 +86,16 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 			// initialize ant
 			ant.Init()
 			// create path for this ant
-			for !ant.Done() {
-				options := ant.Pheromones()
+			for {
+				options := ant.PerceivePheromone()
 				next := weightedChoice(options, 1)[0]
 				if next == -1 {
 					break
 				}
-				ant.Step(next)
+				done := ant.Step(next)
+				if done {
+					break
+				}
 			}
 			// evaluate path
 			performance := evaluate(ant)
@@ -106,7 +108,7 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 				worstPerformance = performance
 			}
 		}
-		population[bestIndex].UpdatePheromones(bestPerformance)
+		population[bestIndex].DropPheromone(bestPerformance)
 		population[0].Evaporate(settings.Evaporation, settings.MinPheromone)
 
 		res.AveragePerformances = append(res.AveragePerformances, totalPerformance/float64(len(population)))
