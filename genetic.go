@@ -41,11 +41,12 @@ func weightedChoice(weights []float64, n int) []int {
 }
 
 // Genome represents a genome (candidate) in the genetic algorithm
-// Fitness returns the objective value, Mutate returns a mutated new genome
-// and Crossover merges two genomes and returns the child genome
 type Genome interface {
+	// Fitness returns the objective function value for this genome
 	Fitness() float64
+	// Mutate returns a neighbor of this genome
 	Mutate() Genome
+	// Crossover merges this and another genome to procude a descendant
 	Crossover(other Genome) Genome
 }
 
@@ -73,10 +74,14 @@ const (
 
 // GASettings represents the settings available in the genetic algorithm
 type GASettings struct {
-	Selection      Selection
+	// Selection defines the type of selection to be used
+	Selection Selection
+	// TournamentSize defines the size of a tournament (only necessary for TournamentSelection)
 	TournamentSize int
-	MutationRate   float64
-	Elitism        int
+	// MutationRate is the probability of a candidate to mutate after crossover
+	MutationRate float64
+	// Elitism is the number of best candidates to pass over to the next generation without selection
+	Elitism int
 	Settings
 }
 

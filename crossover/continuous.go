@@ -1,3 +1,5 @@
+// Package crossover provides methods to combine two solution
+// candidates to find another solution. It  complements the hego package
 package crossover
 
 import (

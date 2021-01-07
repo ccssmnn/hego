@@ -16,9 +16,8 @@ func knapsack(selection []bool, values, weights []float64, maxWeight float64) fl
 			weight += weights[index]
 		}
 	}
-	if weight > maxWeight {
-		value -= 10 * (weight - maxWeight)
-	}
+	// the penalty term is missing here since we dont allow elements that dont
+	// fit to be selected
 	return value
 }
 
@@ -26,6 +25,7 @@ var values = []float64{69, 21, 33, 50, 89, 58, 27, 95, 52, 68, 26, 84, 46, 28, 2
 var weights = []float64{6, 1, 1, 4, 9, 7, 3, 5, 7, 7, 9, 4, 4, 4, 8, 7, 7, 6, 5, 3}
 var maxWeight = 30.0
 var pheromones []float64
+var bestPerformance = math.MaxFloat64
 
 type ant struct {
 	weight    float64
@@ -33,12 +33,15 @@ type ant struct {
 	selection []bool
 }
 
+// Init resets weight, value and selection. Is called before an ant is searching for another selection
 func (a *ant) Init() {
 	a.weight = 0.0
 	a.value = 0.0
 	a.selection = make([]bool, len(weights))
 }
 
+// Step adds next item to the selection. Here we also compute weight and value. Done is returned, when weight limit
+// will be reached with another selection or no items are left to choose
 func (a *ant) Step(next int) bool {
 	a.weight += weights[next]
 	a.value += values[next]
@@ -54,6 +57,7 @@ func (a *ant) Step(next int) bool {
 	return done
 }
 
+// PerceivePheromone returns nonzero values for each unselected item and for any item that would not fit into the bag
 func (a *ant) PerceivePheromone() []float64 {
 	res := make([]float64, len(pheromones))
 	copy(res, pheromones)
@@ -72,22 +76,29 @@ func (a *ant) PerceivePheromone() []float64 {
 	return res
 }
 
+// DropPheromone increases pheromone amount by 0.2 not considering the performance
 func (a *ant) DropPheromone(performance float64) {
 	for index, choice := range a.selection {
 		if choice {
-			pheromones[index] += 0.2
+			pheromones[index] += 1 / (1 + (bestPerformance-performance)/bestPerformance)
 		}
 	}
 }
 
+// Evaporate applies factor and min to pheromone vector
 func (a *ant) Evaporate(factor, min float64) {
 	for i := range pheromones {
 		pheromones[i] = math.Max(min, pheromones[i]*factor)
 	}
 }
 
+// performance returns negative knapsack score
 func (a *ant) Performance() float64 {
-	return -knapsack(a.selection, values, weights, maxWeight)
+	performance := -knapsack(a.selection, values, weights, maxWeight)
+	if performance < bestPerformance {
+		bestPerformance = performance
+	}
+	return performance
 }
 
 func main() {
@@ -96,23 +107,23 @@ func main() {
 	for i := range pheromones {
 		pheromones[i] = initialPheromone
 	}
-	population := make([]hego.Ant, 10)
+	population := make([]hego.Ant, 100)
 	for i := range population {
 		population[i] = &ant{}
 	}
 
 	settings := hego.ACOSettings{}
-	settings.Evaporation = 0.95
+	settings.Evaporation = 0.99
 	settings.MinPheromone = 0.01
-	settings.MaxIterations = 100
-	settings.Verbose = settings.MaxIterations / 10
+	settings.MaxIterations = 10
+	settings.Verbose = settings.MaxIterations / 10 // log 10 steps to look at convergence behaviour
 
 	result, err := hego.ACO(population, settings)
 
 	if err != nil {
-		fmt.Printf("Got error while running Genetic Algorithm: %v", err)
+		fmt.Printf("Got error while running Ant Colony Optimization: %v", err)
 	} else {
-		fmt.Printf("Finished Genetic Algorithm in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
+		fmt.Printf("Finished Ant Colony Optimization in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
 	}
 	return
 }

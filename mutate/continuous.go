@@ -1,3 +1,5 @@
+// Package mutate provides methods to mutate one solution candidate in order
+// to generate neighboring solution candidates
 package mutate
 
 import (

@@ -38,8 +38,10 @@ func readDistances() error {
 }
 
 var pheromones = [][]float64{}
+var bestPerformance = math.MaxFloat64
 
 type ant struct {
+	length   float64
 	position int
 	tour     []int
 }
@@ -47,34 +49,54 @@ type ant struct {
 func (a *ant) Init() {
 	// always start at city 0
 	a.position = 0
+	a.length = 0.0
 	// reset tour
 	a.tour = []int{0}
 }
 
+// Step updates position, appends next stop to tour and returns done when tour length is equal to city count
 func (a *ant) Step(next int) bool {
+	a.length += distances[a.position][next]
 	a.position = next
 	a.tour = append(a.tour, next)
-	return len(a.tour) == 48
+	done := len(a.tour) == 48
+	if done {
+		a.tour = append(a.tour, 0)
+		a.length += distances[a.position][0]
+		a.position = 0
+	}
+	return done
 }
 
+// PerceivePheromone returns values from pheromone matrix for current position
+// and multiplies it by a 1/distance. This makes closer cities more attractive
+// (nearest neighbor heuristic). Also all stops that have been visited already
+// will have 0.0 pheromone
 func (a *ant) PerceivePheromone() []float64 {
 	p := pheromones[a.position]
+	d := distances[a.position]
 	res := make([]float64, len(p))
 	copy(res, p)
+	for i := range res {
+		res[i] *= 1 / d[i] // nearest neighbor factor
+	}
 	for _, stop := range a.tour {
 		res[stop] = 0.0 // set pheromone to 0 when city has been visited
 	}
 	return res
 }
 
+// DropPheromone adds pheromone to pheromone matrix along the tour of this ant
+// the amount of pheromone that is dropped depends on the performance of the tour
+// compared with the current best performance
 func (a *ant) DropPheromone(performance float64) {
 	for i := range a.tour {
 		if i == len(a.tour)-1 {
 			continue
 		}
 		prev, next := a.tour[i], a.tour[i+1]
-		pheromones[prev][next] += 0.2
-		pheromones[next][prev] += 0.2
+		pheromones[prev][next] += 1 / (1 + (bestPerformance-performance)/bestPerformance)
+		pheromones[next][prev] += 1 / (1 + (bestPerformance-performance)/bestPerformance)
 	}
 }
 
@@ -87,14 +109,11 @@ func (a *ant) Evaporate(factor, min float64) {
 }
 
 func (a *ant) Performance() float64 {
-	cost := 0.0
-	position := a.tour[0]
-	for _, next := range a.tour {
-		cost += distances[position][next]
-		position = next
+	length := a.length
+	if length < bestPerformance {
+		bestPerformance = length
 	}
-	cost += distances[position][a.tour[0]]
-	return cost
+	return length
 }
 
 func main() {
@@ -126,17 +145,17 @@ func main() {
 	}
 
 	settings := hego.ACOSettings{}
-	settings.Evaporation = 0.9
-	settings.MinPheromone = 0.001
+	settings.Evaporation = 0.99
+	settings.MinPheromone = 0.01
 	settings.MaxIterations = 1000
 	settings.Verbose = settings.MaxIterations / 10
 
 	result, err := hego.ACO(population, settings)
 
 	if err != nil {
-		fmt.Printf("Got error while running Genetic Algorithm: %v", err)
+		fmt.Printf("Got error while running Ant Colony Optimization: %v", err)
 	} else {
-		fmt.Printf("Finished Genetic Algorithm in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
+		fmt.Printf("Finished Ant Colony Optimization in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
 	}
 	return
 }

@@ -1,3 +1,8 @@
+// Package hego provides methods to blackbox optimization algorithms like
+// Genetic Algorithm, Simulated Annealing or Ant Colony Optimization
+//
+// The consistent API between algorithms and (optionally) verbose execution
+// make finding the best algorithm and the right parameters easy and quick
 package hego
 
 import "time"

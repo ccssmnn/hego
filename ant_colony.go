@@ -11,25 +11,36 @@ import (
 
 // Ant is the individuum in the population based Ant Colony Optimization (ACO)
 type Ant interface {
+	// Init initializes the ant for creating a new tour
 	Init()
+	// Step performs one step to the next position (encoded by int) and returns true when the tour is finished
 	Step(next int) bool
+	// PerceivePheromone returns a pheromone slice where each element represents the pheromone for the next step (encoded by position)
 	PerceivePheromone() []float64
+	// DropPheromone leaves pheromone (depending on the performance) on the path of this ant
 	DropPheromone(performance float64)
+	// Evaporate is called after one iteration and reduces the amount of pheromone on the paths
 	Evaporate(factor, min float64)
+	// Performance is the objective, lower is better
 	Performance() float64
 }
 
 // ACOResult represents the result of the ACO
 type ACOResult struct {
+	// AveragePerformances holds the mean performances for each iteration
 	AveragePerformances []float64
-	BestPerformances    []float64
-	BestAnts            []Ant
+	// BestPerformances holds the best performance for each iteration
+	BestPerformances []float64
+	// BestAnts holds the best Ant for each iteration
+	BestAnts []Ant
 	Result
 }
 
 // ACOSettings represents the settings available in ACO
 type ACOSettings struct {
-	Evaporation  float64
+	// Evaporation must be a value in (0, 1] and is used to reduce the amount of pheromone after each iteration
+	Evaporation float64
+	// MinPheromone is the lowest possible amount of pheromone. Convergence to the true optimum is theoretically only guaranteed for a minpheromone > 0
 	MinPheromone float64
 	Settings
 }
@@ -66,8 +77,8 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 	flushTable := func() {}
 
 	if settings.Verbose > 0 {
-		fmt.Println("Starting Genetic Algorithm...")
-		fmt.Fprintln(w, "Iteration\tAverage Fitness\tBest Fitness\t")
+		fmt.Println("Starting Ant Colony Optimization...")
+		fmt.Fprintln(w, "Iteration\tAverage Performance\tBest Performance\t")
 		addLine = func(i int, avg, best float64) {
 			if i%settings.Verbose == 0 || i+1 == settings.MaxIterations {
 				fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, res.AveragePerformances[i], res.BestPerformances[i])
@@ -107,6 +118,7 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 			}
 		}
 		population[bestIndex].DropPheromone(bestPerformance)
+		// population[bestIndex].DropPheromone(bestPerformance)
 		population[0].Evaporate(settings.Evaporation, settings.MinPheromone)
 
 		res.AveragePerformances[i] = totalPerformance / float64(len(population))
