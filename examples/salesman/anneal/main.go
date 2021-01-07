@@ -77,7 +77,7 @@ func main() {
 	settings := hego.SASettings{}
 	settings.MaxIterations = 1000000
 	settings.Verbose = settings.MaxIterations / 10 // log 10 times during the process
-	settings.Temperature = 100000.0                // choose temperature in the range of initial random guesses energies
+	settings.Temperature = 10000.0                 // choose temperature in the range of initial random guesses energies
 	settings.AnnealingFactor = 0.99999             // choose AnnealingFactor to make temperature reach low values at the end of the process
 
 	// start simulated annealing
@@ -86,6 +86,6 @@ func main() {
 	if err != nil {
 		fmt.Printf("Got error while running Anneal: %v", err)
 	}
-	fmt.Printf("Finished Annealing in %v!, Tour Length: %v \n", result.Runtime, result.Energies[result.Iterations])
+	fmt.Printf("Finished Annealing in %v!, Tour Length: %v, Performed %v state updates \n", result.Runtime, result.Energies[result.Iterations], len(result.States))
 	return
 }

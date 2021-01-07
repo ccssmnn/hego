@@ -19,7 +19,7 @@ type AnnealingState interface {
 // SAResult represents the result of the Anneal optimization. The last state
 // and last energy are the final results. It extends the basic Result type
 type SAResult struct {
-	// States hold every state during the process
+	// States hold every state during the process (updated on state change)
 	States []AnnealingState
 	// Energies hold the energy value of every state in the process
 	Energies []float64
@@ -66,61 +66,70 @@ func SA(
 		return
 	}
 
+	start := time.Now()
+
+	var buflog bytes.Buffer
+	var w *tabwriter.Writer
+	addLine := func(i int, temp, energy float64) {}
+	flushTable := func() {}
+	if settings.Verbose > 0 {
+		w = tabwriter.NewWriter(
+			&buflog, 0, 0, 3, []byte(" ")[0],
+			tabwriter.AlignRight,
+		)
+
+		fmt.Println("Starting Simulated Annealing...")
+		fmt.Fprintln(w, "Iteration\tTemperature\tEnergy\t")
+
+		addLine = func(i int, temp, energy float64) {
+			if i%settings.Verbose == 0 || i+1 == settings.MaxIterations {
+				fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, temp, energy)
+			}
+		}
+		flushTable = func() {
+			w.Flush()
+			fmt.Println(buflog.String())
+			fmt.Printf("DONE after %v\n", res.Runtime)
+		}
+	}
+
 	evaluate := func(s AnnealingState) float64 {
 		res.FuncEvaluations++
 		return s.Energy()
 	}
 
-	start := time.Now()
-
 	state := initialState
 	energy := evaluate(state)
 	temperature := settings.Temperature
-	res.States = append(res.States, state)
-	res.Energies = append(res.Energies, energy)
-	var buflog bytes.Buffer
-	w := tabwriter.NewWriter(
-		&buflog, 0, 0, 3, []byte(" ")[0],
-		tabwriter.AlignRight,
-	)
-	if settings.Verbose > 0 {
-		fmt.Println("Starting Simulated Annealing...")
-		fmt.Fprintln(w, "Iteration\tTemperature\tEnergy\t")
-	}
+
+	res.States = make([]AnnealingState, 0, settings.MaxIterations)
+	res.Energies = make([]float64, settings.MaxIterations)
 
 	for i := 0; i < settings.MaxIterations; i++ {
 		candidate := state.Neighbor()
 		candidateEnergy := evaluate(candidate)
-
+		update := false
 		if candidateEnergy < energy {
+			update = true
+		} else if math.Exp((energy-candidateEnergy)/temperature) > rand.Float64() {
+			update = true
+		}
+		if update {
 			state = candidate
 			energy = candidateEnergy
-		} else {
-			probability := math.Exp((energy - candidateEnergy) / temperature)
-			if probability > rand.Float64() {
-				state = candidate
-				energy = candidateEnergy
-			}
+			res.States = append(res.States, state)
 		}
 
 		temperature = temperature * settings.AnnealingFactor
-
-		res.States = append(res.States, state)
-		res.Energies = append(res.Energies, energy)
-
-		if settings.Verbose > 0 && (i%settings.Verbose == 0 || i+1 == settings.MaxIterations) {
-			fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, temperature, energy)
-		}
+		res.Energies[i] = energy
+		res.Iterations++
+		addLine(i, temperature, energy)
 	}
 
 	end := time.Now()
 	res.Runtime = end.Sub(start)
 	res.Iterations = settings.MaxIterations
 
-	if settings.Verbose > 0 {
-		w.Flush()
-		fmt.Println(buflog.String())
-		fmt.Printf("DONE after %v\n", res.Runtime)
-	}
+	flushTable()
 	return
 }
