@@ -9,6 +9,13 @@ func TestUniformBool(t *testing.T) {
 	a := []bool{true, true, true, true}
 	b := []bool{false, false, false, false}
 	UniformBool(a, b)
+	d := []bool{true, true}
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("crossover method should panic for inputs with unequal lengths")
+		}
+	}()
+	UniformBool(a, d)
 }
 
 func TestOnePointBool(t *testing.T) {
@@ -27,6 +34,13 @@ func TestOnePointBool(t *testing.T) {
 			}
 		}
 	}
+	d := []bool{true, true}
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("crossover method should panic for inputs with unequal lengths")
+		}
+	}()
+	OnePointBool(a, d)
 }
 
 func TestTwoPointBool(t *testing.T) {
@@ -50,4 +64,11 @@ func TestTwoPointBool(t *testing.T) {
 			}
 		}
 	}
+	d := []bool{true, true}
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("crossover method should panic for inputs with unequal lengths")
+		}
+	}()
+	TwoPointBool(a, d)
 }

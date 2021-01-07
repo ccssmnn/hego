@@ -1,11 +1,11 @@
 package hego
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math"
 	"math/rand"
-	"os"
 	"sort"
 	"text/tabwriter"
 	"time"
@@ -82,17 +82,14 @@ type GASettings struct {
 
 // Verify returns an error, if settings are not valid
 func (s *GASettings) Verify() error {
-	if s.MaxIterations < 1 {
-		return fmt.Errorf("MaxIterations must be greater than 0, not %v", s.MaxIterations)
-	}
 	if s.MutationRate > 1.0 || s.MutationRate < 0.0 {
 		return fmt.Errorf("mutation rate must be between 0.0 and 1.0, not %v", s.MutationRate)
 	}
 	if s.Elitism < 0 {
-		return errors.New("elitism represents the number of best genomes that survive one generation. It cannot be negative")
+		return errors.New("elitism cannot be negative")
 	}
 	if s.Selection == TournamentSelection && s.TournamentSize < 2 {
-		return errors.New("When TournamentSelection is set, TournamentSize must be a value above 1")
+		return errors.New("when TournamentSelection is set, TournamentSize must be a value above 1")
 	}
 	return nil
 }
@@ -215,27 +212,25 @@ func GA(
 	}
 
 	start := time.Now()
+	var buflog bytes.Buffer
+	w := tabwriter.NewWriter(&buflog, 0, 0, 3, []byte(" ")[0], tabwriter.AlignRight)
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, []byte(" ")[0], tabwriter.AlignRight)
-
-	// logger will log intermediate status data into writer, does nothing when not verbose
-	logger := func(i int, avg, best float64) {}
-	// flusher will flush writer to stdout if verbose
-	flusher := func() {}
+	// log intermediate status data into writer, does nothing when not verbose
+	addLine := func(i int, avg, best float64) {}
+	// flush writer to stdout if verbose
+	flushTable := func() {}
 
 	if settings.Verbose > 0 {
 		fmt.Println("Starting Genetic Algorithm...")
 		fmt.Fprintln(w, "Iteration\tAverage Fitness\tBest Fitness\t")
-
-		logger = func(i int, avg, best float64) {
+		addLine = func(i int, avg, best float64) {
 			if i%settings.Verbose == 0 || i+1 == settings.MaxIterations {
 				fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, res.AveragedFitness[i], res.BestFitness[i])
 			}
 		}
-
-		flusher = func() {
+		flushTable = func() {
 			w.Flush()
-			fmt.Printf("DONE after %v\n", res.Runtime)
+			fmt.Println(buflog.String())
 		}
 	}
 
@@ -264,7 +259,7 @@ func GA(
 		res.AveragedFitness[i] = totalFitness / float64(len(pop))
 		res.BestFitness[i] = bestFitness
 		res.BestGenome[i] = pop[bestIndex].genome
-		logger(i, res.AveragedFitness[i], res.BestFitness[i])
+		addLine(i, res.AveragedFitness[i], res.BestFitness[i])
 
 		// SELECTION
 		parentIds := pop.selectParents(&settings)
@@ -286,7 +281,8 @@ func GA(
 		}
 		res.Iterations++
 	}
-	flusher()
+	flushTable()
 	res.Runtime = time.Now().Sub(start)
+	fmt.Printf("DONE after %v\n", res.Runtime)
 	return res, nil
 }

@@ -26,7 +26,7 @@ func OnePointPerm(a, b []int) []int {
 				return bindex
 			}
 		}
-		return -1
+		panic("No untaken values in b left but another value was requested. Verify that the inputs have unique contents.")
 	}
 	// fill gaps in c with untaken values from b
 	for i := cut; i < len(c); i++ {
@@ -64,7 +64,7 @@ func TwoPointPerm(a, b []int) []int {
 				return bindex
 			}
 		}
-		return -1
+		panic("No untaken values in b left but another value was requested. Verify that the inputs have unique contents.")
 	}
 	// fill gaps in c with untaken values from b
 	for i := range c {

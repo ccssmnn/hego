@@ -1,10 +1,10 @@
 package hego
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"math/rand"
-	"os"
 	"text/tabwriter"
 	"time"
 )
@@ -45,9 +45,6 @@ type SASettings struct {
 
 // Verify returns an error if settings verification fails
 func (s *SASettings) Verify() error {
-	if s.MaxIterations <= 0 {
-		return fmt.Errorf("iterations must be greater that 0, got %v", s.MaxIterations)
-	}
 	if s.Temperature <= 0.0 {
 		return fmt.Errorf("temperature must be greater that 0.0, got %v", s.Temperature)
 	}
@@ -81,9 +78,9 @@ func SA(
 	temperature := settings.Temperature
 	res.States = append(res.States, state)
 	res.Energies = append(res.Energies, energy)
-
+	var buflog bytes.Buffer
 	w := tabwriter.NewWriter(
-		os.Stdout, 0, 0, 3, []byte(" ")[0],
+		&buflog, 0, 0, 3, []byte(" ")[0],
 		tabwriter.AlignRight,
 	)
 	if settings.Verbose > 0 {
@@ -122,6 +119,7 @@ func SA(
 
 	if settings.Verbose > 0 {
 		w.Flush()
+		fmt.Println(buflog.String())
 		fmt.Printf("DONE after %v\n", res.Runtime)
 	}
 	return

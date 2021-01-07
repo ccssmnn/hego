@@ -43,15 +43,15 @@ func (a *ant) Step(next int) bool {
 	a.weight += weights[next]
 	a.value += values[next]
 	a.selection[next] = true
-	anotherStepPossible := false
+	done := true
 	for i, choice := range a.selection {
 		if !choice {
 			if a.weight+weights[i] < maxWeight {
-				anotherStepPossible = true
+				done = false
 			}
 		}
 	}
-	return !anotherStepPossible
+	return done
 }
 
 func (a *ant) PerceivePheromone() []float64 {
@@ -91,9 +91,10 @@ func (a *ant) Performance() float64 {
 }
 
 func main() {
+	initialPheromone := 1.0
 	pheromones = make([]float64, len(weights))
 	for i := range pheromones {
-		pheromones[i] = 1.0
+		pheromones[i] = initialPheromone
 	}
 	population := make([]hego.Ant, 10)
 	for i := range population {
