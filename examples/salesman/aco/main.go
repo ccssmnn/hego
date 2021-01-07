@@ -62,9 +62,8 @@ func (a *ant) PerceivePheromone() []float64 {
 	res := make([]float64, len(p))
 	copy(res, p)
 	for _, stop := range a.tour {
-		res[stop] = 0.0
+		res[stop] = 0.0 // set pheromone to 0 when city has been visited
 	}
-	res[a.position] = 0.0
 	return res
 }
 
@@ -104,7 +103,18 @@ func main() {
 		fmt.Printf("failed to read distances: %v", err)
 		return
 	}
-	pheromones = hego.InitializePheromoneMatrix(len(distances), 1.0)
+
+	pheromones = make([][]float64, len(distances))
+	initialPheromone := 1.0
+	for i := range pheromones {
+		line := make([]float64, len(distances[i]))
+		for j := range line {
+			if i != j {
+				line[j] = initialPheromone
+			}
+		}
+		pheromones[i] = line
+	}
 	tour := make([]int, 0)
 	for i := 0; i < 48; i++ {
 		tour = append(tour, i)

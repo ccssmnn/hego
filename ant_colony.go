@@ -1,10 +1,10 @@
 package hego
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math"
-	"os"
 	"text/tabwriter"
 	"time"
 )
@@ -34,26 +34,12 @@ type ACOSettings struct {
 	Settings
 }
 
-// Verify checks validity of the ACOSettings and returns nil if everything is fine
+// Verify checks validity of the ACOSettings and returns nil if settings are ok
 func (s *ACOSettings) Verify() error {
 	if s.Evaporation <= 0 || s.Evaporation > 1 {
 		return errors.New("Evaporation must be a value in (0, 1]")
 	}
 	return nil
-}
-
-// InitializePheromoneMatrix generates a pheromone matrix based on a distance
-// matrix and a starter value
-func InitializePheromoneMatrix(dim int, starter float64) [][]float64 {
-	pheromones := make([][]float64, 0, dim)
-	for i := 0; i < dim; i++ {
-		line := make([]float64, dim)
-		for j := 0; j < dim; j++ {
-			line[j] = starter
-		}
-		pheromones = append(pheromones, line)
-	}
-	return pheromones
 }
 
 // ACO performs the ant colony optimization algorithm
@@ -64,23 +50,42 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 		return
 	}
 
+	start := time.Now()
+
 	// increase FuncEvaluations for every performance call
 	evaluate := func(a Ant) float64 {
 		res.FuncEvaluations++
 		return a.Performance()
 	}
 
-	start := time.Now()
+	var buflog bytes.Buffer
+	w := tabwriter.NewWriter(&buflog, 0, 0, 3, []byte(" ")[0], tabwriter.AlignRight)
+	// log intermediate status data into writer, does nothing when not verbose
+	addLine := func(i int, avg, best float64) {}
+	// flush writer to stdout if verbose
+	flushTable := func() {}
 
-	w := tabwriter.NewWriter(os.Stdout, 0, 0, 3, []byte(" ")[0], tabwriter.AlignRight)
 	if settings.Verbose > 0 {
-		fmt.Println("Starting ACO Algorithm...")
-		fmt.Fprintln(w, "Iteration\tAverage Performance\tBest Performance\t")
+		fmt.Println("Starting Genetic Algorithm...")
+		fmt.Fprintln(w, "Iteration\tAverage Fitness\tBest Fitness\t")
+		addLine = func(i int, avg, best float64) {
+			if i%settings.Verbose == 0 || i+1 == settings.MaxIterations {
+				fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, res.AveragePerformances[i], res.BestPerformances[i])
+			}
+		}
+		flushTable = func() {
+			w.Flush()
+			fmt.Println(buflog.String())
+		}
 	}
+
+	res.AveragePerformances = make([]float64, settings.MaxIterations)
+	res.BestPerformances = make([]float64, settings.MaxIterations)
+	res.BestAnts = make([]Ant, settings.MaxIterations)
+
 	for i := 0; i < settings.MaxIterations; i++ {
 		totalPerformance := 0.0
 		bestPerformance := math.MaxFloat64
-		worstPerformance := -bestPerformance
 		bestIndex := -1
 		for antIndex, ant := range population {
 			// initialize ant
@@ -89,11 +94,7 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 			for {
 				options := ant.PerceivePheromone()
 				next := weightedChoice(options, 1)[0]
-				if next == -1 {
-					break
-				}
-				done := ant.Step(next)
-				if done {
+				if ant.Step(next) { // step returns true when ant is done
 					break
 				}
 			}
@@ -104,29 +105,21 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 				bestPerformance = performance
 				bestIndex = antIndex
 			}
-			if performance > worstPerformance {
-				worstPerformance = performance
-			}
 		}
 		population[bestIndex].DropPheromone(bestPerformance)
 		population[0].Evaporate(settings.Evaporation, settings.MinPheromone)
 
-		res.AveragePerformances = append(res.AveragePerformances, totalPerformance/float64(len(population)))
-		res.BestPerformances = append(res.BestPerformances, bestPerformance)
-		res.BestAnts = append(res.BestAnts, population[bestIndex])
-
-		if settings.Verbose > 0 && (i%settings.Verbose == 0 || i+1 == settings.MaxIterations) {
-			fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, res.AveragePerformances[i], res.BestPerformances[i])
-		}
-	}
-	if settings.Verbose > 0 {
-		w.Flush()
+		res.AveragePerformances[i] = totalPerformance / float64(len(population))
+		res.BestPerformances[i] = bestPerformance
+		res.BestAnts[i] = population[bestIndex]
+		res.Iterations++
+		addLine(i, res.AveragePerformances[i], res.BestPerformances[i])
 	}
 	end := time.Now()
 	res.Runtime = end.Sub(start)
 	if settings.Verbose > 0 {
 		fmt.Printf("DONE after %v\n", res.Runtime)
 	}
-	res.Iterations = settings.MaxIterations
+	flushTable()
 	return
 }
