@@ -58,8 +58,7 @@ func TestSA(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error while running Anneal main algorithm: %v", err)
 	}
-	// maxiterations + 1 because the initial state is not included in the counting
-	if len(res.States) != settings.MaxIterations+1 {
-		t.Errorf("Wrong number of states received: expected %v, got %v", settings.MaxIterations, len(res.States))
+	if len(res.Energies) != settings.MaxIterations {
+		t.Errorf("Wrong number of energy values received: expected %v, got %v", settings.MaxIterations, len(res.States))
 	}
 }
