@@ -2,6 +2,7 @@ package hego
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -11,7 +12,7 @@ import (
 
 // ESResult represents the result of the evolution strategy algorithm
 type ESResult struct {
-	Candidates    [][]float64
+	Candidates       [][]float64
 	AverageObjective []float64
 	BestObjective    []float64
 	Result
@@ -25,10 +26,10 @@ type ESSettings struct {
 	PopulationSize int
 	// LearningRate is the factor to determine the step size after each iteration
 	// a step is made by calculating x = x + learningRate * gradient_estimate(x)
-	LearningRate   float64
+	LearningRate float64
 	// NoiseSigma is the sigma value for noise generated. A higher sigma results in a wider
 	// search spread, but might result in inaccuracies for the gradient estimate
-	NoiseSigma     float64
+	NoiseSigma float64
 	Settings
 }
 
@@ -39,6 +40,9 @@ func (s *ESSettings) Verify() error {
 	}
 	if s.PopulationSize <= 1 {
 		return fmt.Errorf("population size must be greater than 1, got %v", s.PopulationSize)
+	}
+	if s.NoiseSigma == 0.0 {
+		return errors.New("Sigma = 0.0 leads to no search at all")
 	}
 	return nil
 }
@@ -68,8 +72,8 @@ func ES(
 			tabwriter.AlignRight,
 		)
 
-		fmt.Println("Starting Simulated Annealing...")
-		fmt.Fprintln(w, "Iteration\tTemperature\tEnergy\t")
+		fmt.Println("Starting Evolution Strategy Algorithm...")
+		fmt.Fprintln(w, "Iteration\tPopulation Mean\tCurrent Candidate\t")
 
 		addLine = func(i int, temp, energy float64) {
 			if i%settings.Verbose == 0 || i+1 == settings.MaxIterations {
@@ -115,8 +119,8 @@ func ES(
 	}
 	rewards := make([]float64, settings.PopulationSize)
 
-	for i := 0; i < settings.MaxIterations; i++ {	
-		
+	for i := 0; i < settings.MaxIterations; i++ {
+
 		totalReward := 0.0
 		bestReward := math.MaxFloat64
 		for j := range population {
@@ -138,7 +142,7 @@ func ES(
 			stdDev += math.Pow(reward-meanReward, 2)
 		}
 		stdDev = math.Sqrt(stdDev / float64(settings.PopulationSize))
-		
+
 		// update candidate
 		for j := range candidate {
 			// estimate gradient
@@ -147,7 +151,7 @@ func ES(
 				gradientEstimate += individuum[j] * (rewards[index] - meanReward) / stdDev
 			}
 			gradientEstimate *= 1.0 / (float64(settings.PopulationSize) * settings.NoiseSigma)
-			
+
 			// perform gradient step towards minimum
 			candidate[j] -= settings.LearningRate * gradientEstimate
 		}
