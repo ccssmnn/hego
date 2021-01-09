@@ -1,11 +1,9 @@
 package hego
 
 import (
-	"bytes"
 	"fmt"
 	"math"
 	"math/rand"
-	"text/tabwriter"
 	"time"
 )
 
@@ -68,30 +66,7 @@ func SA(
 
 	start := time.Now()
 
-	var buflog bytes.Buffer
-	var w *tabwriter.Writer
-	addLine := func(i int, temp, energy float64) {}
-	flushTable := func() {}
-	if settings.Verbose > 0 {
-		w = tabwriter.NewWriter(
-			&buflog, 0, 0, 3, []byte(" ")[0],
-			tabwriter.AlignRight,
-		)
-
-		fmt.Println("Starting Simulated Annealing...")
-		fmt.Fprintln(w, "Iteration\tTemperature\tEnergy\t")
-
-		addLine = func(i int, temp, energy float64) {
-			if i%settings.Verbose == 0 || i+1 == settings.MaxIterations {
-				fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, temp, energy)
-			}
-		}
-		flushTable = func() {
-			w.Flush()
-			fmt.Println(buflog.String())
-			fmt.Printf("DONE after %v\n", res.Runtime)
-		}
-	}
+	logger := newLogger("Simulated Annealing", []string{"Iteration", "Temperature", "Energy"}, settings.Verbose, settings.MaxIterations)
 
 	evaluate := func(s AnnealingState) float64 {
 		res.FuncEvaluations++
@@ -123,13 +98,21 @@ func SA(
 		temperature = temperature * settings.AnnealingFactor
 		res.Energies[i] = energy
 		res.Iterations++
-		addLine(i, temperature, energy)
+		logger.AddLine(i, []string{
+			fmt.Sprint(i),
+			fmt.Sprint(temperature),
+			fmt.Sprint(energy),
+		})
 	}
 
 	end := time.Now()
 	res.Runtime = end.Sub(start)
 	res.Iterations = settings.MaxIterations
 
-	flushTable()
+	logger.Flush()
+	if settings.Verbose > 0 {
+		fmt.Printf("Done after %v!\n", res.Runtime)
+	}
+
 	return
 }

@@ -1,13 +1,11 @@
 package hego
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math"
 	"math/rand"
 	"sort"
-	"text/tabwriter"
 	"time"
 )
 
@@ -217,27 +215,7 @@ func GA(
 	}
 
 	start := time.Now()
-	var buflog bytes.Buffer
-	w := tabwriter.NewWriter(&buflog, 0, 0, 3, []byte(" ")[0], tabwriter.AlignRight)
-
-	// log intermediate status data into writer, does nothing when not verbose
-	addLine := func(i int, avg, best float64) {}
-	// flush writer to stdout if verbose
-	flushTable := func() {}
-
-	if settings.Verbose > 0 {
-		fmt.Println("Starting Genetic Algorithm...")
-		fmt.Fprintln(w, "Iteration\tAverage Fitness\tBest Fitness\t")
-		addLine = func(i int, avg, best float64) {
-			if i%settings.Verbose == 0 || i+1 == settings.MaxIterations {
-				fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, res.AveragedFitness[i], res.BestFitness[i])
-			}
-		}
-		flushTable = func() {
-			w.Flush()
-			fmt.Println(buflog.String())
-		}
-	}
+	logger := newLogger("Genetic Algorithm", []string{"Iteration", "Average Fitness", "Best Fitness"}, settings.Verbose, settings.MaxIterations)
 
 	pop := make(population, len(initialPopulation))
 	for i := range initialPopulation {
@@ -264,7 +242,12 @@ func GA(
 		res.AveragedFitness[i] = totalFitness / float64(len(pop))
 		res.BestFitness[i] = bestFitness
 		res.BestGenome[i] = pop[bestIndex].genome
-		addLine(i, res.AveragedFitness[i], res.BestFitness[i])
+
+		logger.AddLine(i, []string{
+			fmt.Sprint(i),
+			fmt.Sprint(res.AveragedFitness[i]),
+			fmt.Sprint(res.BestFitness[i]),
+		})
 
 		// SELECTION
 		parentIds := pop.selectParents(&settings)
@@ -286,8 +269,10 @@ func GA(
 		}
 		res.Iterations++
 	}
-	flushTable()
+	logger.Flush()
 	res.Runtime = time.Now().Sub(start)
-	fmt.Printf("DONE after %v\n", res.Runtime)
+	if settings.Verbose > 0 {
+		fmt.Printf("DONE after %v\n", res.Runtime)
+	}
 	return res, nil
 }

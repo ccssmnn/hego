@@ -1,11 +1,9 @@
 package hego
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math"
-	"text/tabwriter"
 	"time"
 )
 
@@ -69,26 +67,7 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 		return a.Performance()
 	}
 
-	var buflog bytes.Buffer
-	w := tabwriter.NewWriter(&buflog, 0, 0, 3, []byte(" ")[0], tabwriter.AlignRight)
-	// log intermediate status data into writer, does nothing when not verbose
-	addLine := func(i int, avg, best float64) {}
-	// flush writer to stdout if verbose
-	flushTable := func() {}
-
-	if settings.Verbose > 0 {
-		fmt.Println("Starting Ant Colony Optimization...")
-		fmt.Fprintln(w, "Iteration\tAverage Performance\tBest Performance\t")
-		addLine = func(i int, avg, best float64) {
-			if i%settings.Verbose == 0 || i+1 == settings.MaxIterations {
-				fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, res.AveragePerformances[i], res.BestPerformances[i])
-			}
-		}
-		flushTable = func() {
-			w.Flush()
-			fmt.Println(buflog.String())
-		}
-	}
+	logger := newLogger("Ant Colony Optimization", []string{"Iteration", "Average Performance", "Best Performance"}, settings.Verbose, settings.MaxIterations)
 
 	res.AveragePerformances = make([]float64, settings.MaxIterations)
 	res.BestPerformances = make([]float64, settings.MaxIterations)
@@ -125,13 +104,18 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 		res.BestPerformances[i] = bestPerformance
 		res.BestAnts[i] = population[bestIndex]
 		res.Iterations++
-		addLine(i, res.AveragePerformances[i], res.BestPerformances[i])
+		logger.AddLine(i, []string{
+			fmt.Sprint(i),
+			fmt.Sprint(res.AveragePerformances[i]),
+			fmt.Sprint(res.BestPerformances[i]),
+		})
 	}
 	end := time.Now()
 	res.Runtime = end.Sub(start)
+
+	logger.Flush()
 	if settings.Verbose > 0 {
 		fmt.Printf("DONE after %v\n", res.Runtime)
 	}
-	flushTable()
 	return
 }

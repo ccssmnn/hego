@@ -1,12 +1,10 @@
 package hego
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"math"
 	"math/rand"
-	"text/tabwriter"
 	"time"
 )
 
@@ -61,32 +59,7 @@ func ES(
 		return res, err
 	}
 	start := time.Now()
-
-	var buflog bytes.Buffer
-	var w *tabwriter.Writer
-	addLine := func(i int, mean, best float64) {}
-	flushTable := func() {}
-	if settings.Verbose > 0 {
-		w = tabwriter.NewWriter(
-			&buflog, 0, 0, 3, []byte(" ")[0],
-			tabwriter.AlignRight,
-		)
-
-		fmt.Println("Starting Evolution Strategy Algorithm...")
-		fmt.Fprintln(w, "Iteration\tPopulation Mean\tCurrent Candidate\t")
-
-		addLine = func(i int, temp, energy float64) {
-			if i%settings.Verbose == 0 || i+1 == settings.MaxIterations {
-				fmt.Fprintf(w, "%v\t%v\t%v\t\n", i, temp, energy)
-			}
-		}
-		flushTable = func() {
-			w.Flush()
-			fmt.Println(buflog.String())
-			fmt.Printf("DONE after %v\n", res.Runtime)
-		}
-	}
-
+	logger := newLogger("Evolution Strategy Algorithm", []string{"Iteration", "Population Mean", "Current Candidate"}, settings.Verbose, settings.MaxIterations)
 	// increase funcEvaluations counter for every call to objective
 	evaluate := func(x []float64) float64 {
 		res.FuncEvaluations++
@@ -160,13 +133,21 @@ func ES(
 		copy(res.Candidates[i], candidate)
 		res.BestObjective[i] = bestReward
 		res.AverageObjective[i] = meanReward
-		// log
-		addLine(i, meanReward, bestReward)
+
+		logger.AddLine(i, []string{
+			fmt.Sprint(i),
+			fmt.Sprint(meanReward),
+			fmt.Sprint(objective(candidate)),
+		})
 	}
 
 	end := time.Now()
 	res.Runtime = end.Sub(start)
 	res.Iterations = settings.MaxIterations
-	flushTable()
+	logger.Flush()
+	if settings.Verbose > 0 {
+		fmt.Printf("Done after %v!\n", res.Runtime)
+	}
+
 	return res, nil
 }
