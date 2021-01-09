@@ -19,11 +19,11 @@ Currently the following algorithms are implemented:
 - Simulated Annealing (SA)
 - Genetic Algorithm (GA)
 - Ant Colony Optimization (ACO)
+- Evolution Strategies (ES)
 
 These are in our scope (TODO):
 
 - Glowworm Swarm Optimization (GSO), nice for finding multiple local minima
-- Evolutionary Strategies (ES), good for real-valued functions
 - Memetic Algorithm (MA), Genetic Algorithm + Local Search
 
 All algorithms are implement for finding minimum values.
@@ -193,6 +193,66 @@ Starting Genetic Algorithm...
 DONE after 19.64255ms
 Finished Genetic Algorithm in 19.64255ms! Needed 9361 function evaluations
 Minimum found at x = [-0.003463162201316693, -5.6113457259983346e-05] with f(x) = 0.002379945277670714
+```
+### Evolution Strategies
+
+Since Evolution Strategies are a gradient estimation strategy, this algorithm only supports minimizing problems of float vector values.
+
+```golang
+package main
+
+import (
+	"fmt"
+	"math"
+	"math/rand"
+
+	"github.com/ccssmnn/hego"
+)
+
+func rastringin(v []float64) float64 {
+	x, y := v[0], v[1]
+	return 10*2 + (x*x - 10*math.Cos(2*math.Pi*x)) + (y*y - 10*math.Cos(2*math.Pi*y))
+}
+
+func main() {
+
+	x0 := []float64{rand.Float64()*10.0 - 5.0, rand.Float64()*10.0 - 5.0}
+
+	settings := hego.ESSettings{}
+	settings.MaxIterations = 1000
+	settings.Verbose = settings.MaxIterations / 10
+	settings.NoiseSigma = 1.0
+	settings.PopulationSize = 1000
+	settings.LearningRate = 0.1
+
+	result, err := hego.ES(rastringin, x0, settings)
+	if err != nil {
+		fmt.Printf("Got error while running Evolution Strategies Algorithm: %v", err)
+	}
+	fmt.Printf("Finished Evolution Strategies Algorithm! Result: %v, Value: %v \n", result.Candidates[result.Iterations-1], result.BestObjective[result.Iterations-1])
+	return
+}
+
+```
+
+Logs:
+```
+Starting Evolution Strategy Algorithm...
+   Iteration      Population Mean     Current Candidate
+           0   42.224651908748704     6.368128212514245
+         100   22.165302967018864    0.8194490791272049
+         200   21.978639608437753   0.08232895412879238
+         300   21.846276137579434   0.07416924829505689
+         400    21.83424432866074    0.6522660494696222
+         500   22.229350277127352   0.23431951698029962
+         600   21.975966283045697     0.134608450035417
+         700   21.774740603320893    0.5584185645513227
+         800   21.754124247952106     0.594901719915752
+         900   21.772541504660225    0.2556416152500045
+         999   22.232498781270913    0.4453563633436506
+
+DONE after 142.324509ms
+Finished Evolution Strategies Algorithm! Result: [-0.016051413222810604 -0.0070487507112146994], Value: 0.4453563633436506 
 ```
 
 ## Examples

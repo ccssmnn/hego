@@ -59,6 +59,6 @@ func main() {
 		return
 	}
 	// extract result
-	solution := res.States[res.Iterations-1].(state)
-	fmt.Printf("The solution found has an energy of %v", -knapsack(solution, values, weights, maxWeight))
+	solution := res.States[len(res.States)-1].Energy()
+	fmt.Printf("The solution found has an energy of %v \n", solution)
 }
