@@ -20,6 +20,7 @@ Currently the following algorithms are implemented:
 - Genetic Algorithm (GA)
 - Ant Colony Optimization (ACO)
 - Evolution Strategies (ES)
+- Tabu Search (TS)
 
 These are in our scope (TODO):
 
@@ -194,6 +195,7 @@ DONE after 19.64255ms
 Finished Genetic Algorithm in 19.64255ms! Needed 9361 function evaluations
 Minimum found at x = [-0.003463162201316693, -5.6113457259983346e-05] with f(x) = 0.002379945277670714
 ```
+
 ### Evolution Strategies
 
 Since Evolution Strategies are a gradient estimation strategy, this algorithm only supports minimizing problems of float vector values.
@@ -236,6 +238,7 @@ func main() {
 ```
 
 Logs:
+
 ```
 Starting Evolution Strategy Algorithm...
    Iteration      Population Mean     Current Candidate
@@ -252,7 +255,7 @@ Starting Evolution Strategy Algorithm...
          999   22.232498781270913    0.4453563633436506
 
 DONE after 142.324509ms
-Finished Evolution Strategies Algorithm! Result: [-0.016051413222810604 -0.0070487507112146994], Value: 0.4453563633436506 
+Finished Evolution Strategies Algorithm! Result: [-0.016051413222810604 -0.0070487507112146994], Value: 0.4453563633436506
 ```
 
 ## Examples
