@@ -6,12 +6,6 @@ hego aims to provide a consistent API for several metaheuristics (black box opti
 
 Even though most of the metaheuristics might fit to any kind of optimization problem most of them have some caveats / advantages in different fields. hego allows you to rapidly try different algorithms and experiment with the parameters in order to solve your problems in the best possible time-to-quality ratio.
 
-## Usage
-
-Hego is able to solve your optimization problems when the algorithm specific interface is implemented. This approach allows you to use hego for various problem encodings. For example integer- or boolean vectors, graphs, structs etc.
-
-For basic vector types (int, bool and float64) helper methods implemented in the subpackages `hego/crossover` and `hego/mutate` allow you to try out different parameter variants of the algorithms.
-
 ## Algorithms
 
 Currently the following algorithms are implemented:
@@ -19,15 +13,19 @@ Currently the following algorithms are implemented:
 - Simulated Annealing (SA)
 - Genetic Algorithm (GA)
 - Ant Colony Optimization (ACO)
-- Evolution Strategies (ES)
 - Tabu Search (TS)
+- Evolution Strategies (ES) (continuous only)
+- Particle Swarm Optimization (PSO) (continuous only)
 
-These are in our scope (TODO):
+All algorithms are implemented for finding minimum values.
 
-- Glowworm Swarm Optimization (GSO), nice for finding multiple local minima
-- Memetic Algorithm (MA), Genetic Algorithm + Local Search
+## Usage
 
-All algorithms are implement for finding minimum values.
+Hego is able to solve your optimization problems when the algorithm specific interface is implemented. This approach allows you to use hego for various problem encodings. For example integer- or boolean vectors, graphs, structs etc.
+
+For basic vector types (int, bool and float64) helper methods implemented in the subpackages `hego/crossover` and `hego/mutate` allow you to try out different parameter variants of the algorithms.
+
+Some algorithms however are only designed for specific sets of optimization problems. In these cases the algorithms provide an easier call signature that only requires the objective and the initial guess or initializer functions.
 
 The following examples show how to use hego to find solutions for the [Rastringin function](https://en.wikipedia.org/wiki/Rastrigin_function).
 
@@ -256,6 +254,73 @@ Starting Evolution Strategy Algorithm...
 
 DONE after 142.324509ms
 Finished Evolution Strategies Algorithm! Result: [-0.016051413222810604 -0.0070487507112146994], Value: 0.4453563633436506
+```
+
+### Particle Swarm Optimization
+For [Particle Swarm Optimization](https://en.wikipedia.org/wiki/Particle_swarm_optimization) you need to provide the objective function, one init method that initializes a particle and its velocity and the algorithm settings. PSO is also designed for continuous optimization problems.
+
+```golang
+package main
+
+import (
+	"fmt"
+	"math"
+	"math/rand"
+
+	"github.com/ccssmnn/hego"
+)
+
+func rastringin(v []float64) float64 {
+	x, y := v[0], v[1]
+	return 10*2 + (x*x - 10*math.Cos(2*math.Pi*x)) + (y*y - 10*math.Cos(2*math.Pi*y))
+}
+
+func main() {
+
+	init := func() ([]float64, []float64) {
+		return []float64{
+				rand.Float64()*10.0 - 5.0,
+				rand.Float64()*10.0 - 5.0,
+			}, []float64{
+				rand.Float64(),
+				rand.Float64(),
+			}
+	}
+
+	settings := hego.PSOSettings{}
+	settings.MaxIterations = 1000
+	settings.Verbose = settings.MaxIterations / 10
+	settings.PopulationSize = 100
+	settings.GlobalWeight = 0.3
+	settings.Omega = 0.5
+	settings.ParticleWeight = 0.1
+	settings.LearningRate = 0.5
+
+	result, err := hego.PSO(rastringin, init, settings)
+	if err != nil {
+		fmt.Printf("Got error while running Particle Swarm Optimization: %v", err)
+	}
+	fmt.Printf("Finished Particle Swarm Optimization! Result: %v, Value: %v \n", result.BestParticles[len(result.BestParticles)-1], result.BestObjectives[len(result.BestParticles)-1])
+	return
+}
+```
+Logs
+```
+Iteration      Population Mean          Population Best
+           0    37.02758959218644       1.0903639395271298
+         100    12.17235438829838    3.296669603969349e-10
+         200   11.984822426474523   2.8812507935072063e-12
+         300    11.98986211949263   1.9966250874858815e-12
+         400    11.16911682958532    8.331113576787175e-13
+         500   11.324554904448338   2.0250467969162855e-13
+         600   10.603598197357645    3.552713678800501e-15
+         700   10.657698474188042                        0
+         800   10.424831191887263                        0
+         900   10.175484773908693                        0
+         999   10.112701340657786                        0
+
+Done after 13.589655ms!
+Finished Particle Swarm Optimization! Result: [-1.6137381095924141e-09 -1.632641297328185e-09], Value: 0 
 ```
 
 ### Tabu Search
