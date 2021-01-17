@@ -2,7 +2,6 @@ package hego
 
 import (
 	"fmt"
-	"math"
 	"time"
 )
 
@@ -61,7 +60,7 @@ func TS(
 
 	start := time.Now()
 
-	logger := newLogger("Tabu Search", []string{"Iteration", "Objective"}, settings.Verbose, settings.MaxIterations)
+	logger := newLogger("Tabu Search", []string{"Iteration", "Objective", "Best"}, settings.Verbose, settings.MaxIterations)
 
 	evaluate := func(s TabuState) float64 {
 		res.FuncEvaluations++
@@ -69,7 +68,7 @@ func TS(
 	}
 
 	state := initialState
-	Objective := evaluate(state)
+	obj := evaluate(state)
 	tabuList := make([]TabuState, 0)
 
 	inList := func(s TabuState) bool {
@@ -86,43 +85,46 @@ func TS(
 
 	for i := 0; i < settings.MaxIterations; i++ {
 
-		var bestNeighbor *TabuState
-		bestNeighborObj := math.MaxFloat64
+		bestNeighbor := state.Neighbor()
+		bestNeighborObj := evaluate(bestNeighbor)
 
-		for j := 0; j < settings.NeighborhoodSize-1; j++ {
+		for j := 0; j < settings.NeighborhoodSize; j++ {
 			candidate := state.Neighbor()
 			candidateObj := evaluate(candidate)
 			if candidateObj < bestNeighborObj && !inList(candidate) {
-				bestNeighbor = &candidate
+				bestNeighbor = candidate
 				bestNeighborObj = candidateObj
 			}
 		}
 
-		if bestNeighbor == nil {
-			fallback := state.Neighbor()
-			bestNeighbor = &fallback
-			bestNeighborObj = fallback.Objective()
-		}
-
-		tabuList = append(tabuList, *bestNeighbor)
+		tabuList = append(tabuList, bestNeighbor)
 
 		if len(tabuList) > settings.TabuListSize {
 			tabuList = tabuList[1:]
 		}
 
-		state = *bestNeighbor
-		Objective = bestNeighborObj
+		state = bestNeighbor
+		obj = bestNeighborObj
 
-		if len(res.Objectives) > 0 && res.Objectives[len(res.Objectives)-1] < bestNeighborObj {
+		if len(res.Objectives) == 0 || res.Objectives[len(res.Objectives)-1] > bestNeighborObj {
 			res.States = append(res.States, state)
-			res.Objectives = append(res.Objectives, Objective)
+			res.Objectives = append(res.Objectives, obj)
 		}
 
 		res.Iterations++
-		logger.AddLine(i, []string{
-			fmt.Sprint(i),
-			fmt.Sprint(Objective),
-		})
+		if i == 0 {
+			logger.AddLine(i, []string{
+				fmt.Sprint(i),
+				fmt.Sprint(obj),
+				fmt.Sprint(obj),
+			})
+		} else {
+			logger.AddLine(i, []string{
+				fmt.Sprint(i),
+				fmt.Sprint(obj),
+				fmt.Sprint(res.Objectives[len(res.Objectives)-1]),
+			})
+		}
 	}
 
 	end := time.Now()

@@ -198,7 +198,7 @@ Minimum found at x = [-0.003463162201316693, -5.6113457259983346e-05] with f(x) 
 
 ### Evolution Strategies
 
-Since Evolution Strategies are a gradient estimation strategy, this algorithm only supports minimizing problems of float vector values.
+For [Evolution Strategies](https://openai.com/blog/evolution-strategies/) you only need to provide an objective function `func(v []float64) float64` and an initial vector `var x0 []float64`. Thats because Evolution Strategies is a gradient estimation strategy and therefore this algorithm only supports minimizing continuous problems.
 
 ```golang
 package main
@@ -258,6 +258,92 @@ DONE after 142.324509ms
 Finished Evolution Strategies Algorithm! Result: [-0.016051413222810604 -0.0070487507112146994], Value: 0.4453563633436506
 ```
 
+### Tabu Search
+
+For [Tabu Search](https://en.wikipedia.org/wiki/Tabu_search) you need to implement the `TabuState` interface.
+
+```golang
+package main
+
+import (
+	"fmt"
+	"math"
+
+	"github.com/ccssmnn/hego"
+	"github.com/ccssmnn/hego/mutate"
+)
+
+func rastringin(x, y float64) float64 {
+	return 10*2 + (x*x - 10*math.Cos(2*math.Pi*x)) + (y*y - 10*math.Cos(2*math.Pi*y))
+}
+
+// state is a two element vector, it will implement the State interface for Tabu Search
+type state []float64
+
+// Neighbor produces another state by adding gaussian noise to the current state
+func (s state) Neighbor() hego.TabuState {
+	return state(mutate.Gauss(s, 0.3))
+}
+
+// Equal returns true, of two states are almost equal
+func (s state) Equal(other hego.TabuState) bool {
+	otherState := other.(state)
+	for i := range s {
+		if math.Abs(s[i]-otherState[i]) > 1e-4 {
+			return false
+		}
+	}
+	return true
+}
+
+// Objective of the current state. Lower is better
+func (s state) Objective() float64 {
+	return rastringin(s[0], s[1])
+}
+
+func main() {
+
+	initialState := state{5.0, 5.0}
+
+	settings := hego.TSSettings{}
+	settings.MaxIterations = 1000
+	settings.Verbose = settings.MaxIterations / 10
+	settings.TabuListSize = 50
+	settings.NeighborhoodSize = 25
+
+	// start tabu search algorithm
+	result, err := hego.TS(initialState, settings)
+
+	if err != nil {
+		fmt.Printf("Got error while running Anneal: %v", err)
+	}
+	finalState := result.States[len(result.States)-1]
+	finalEnergy := finalState.Objective()
+	fmt.Printf("Finished Tabu Search in %v! Result: %v, Value: %v \n", result.Runtime, finalState, finalEnergy)
+	return
+}
+```
+
+Logs:
+
+```
+   Iteration             Objective                   Best
+           0     51.73729249013981      51.73729249013981
+         100    10.928390644780535     10.449066694314698
+         200     4.979290377705242     0.9958749953531694
+         300    2.0591519405806906   0.052269383345688425
+         400   0.21683395217992185   0.008851428787803428
+         500     5.147812579878252   0.008851428787803428
+         600    2.2625087237816253   0.000735083029045569
+         700    1.3260815465805376   0.000735083029045569
+         800      2.17002190874649   0.000735083029045569
+         900    4.6177943136609745   0.000735083029045569
+         999    0.2010011213275682   0.000735083029045569
+
+Done after 7.11896ms!
+Finished Tabu Search in 7.11896ms! Result: [-0.001324101190205762 0.0013971334657496629], Value: 0.000735083029045569
+```
+
 ## Examples
 
 hego contains a detailed examples directory. It is ordered by problem type and shows how to use hego to find solutions for these types of problems:
@@ -266,15 +352,16 @@ hego contains a detailed examples directory. It is ordered by problem type and s
 - Knapsack Problem, a binary encoded combinatorical optimization problem to select items to get be best value while respecting the maximum weight ([wikipedia](https://en.wikipedia.org/wiki/Knapsack_problem))
 - Rastrigin Function, a non convex function with a large number of local minima ([wikipedia](https://en.wikipedia.org/wiki/Rastrigin_function))
 
-## TODO
+## Contributing
 
-- Implement missing algorithms
-- Find and implement more nature inspired heuristics
-- Extend collection of mutation and crossover methods
-- Add more real-world examples
-  - constrained optimization
-  - vehicle routing
-  - multiple knapsack problem
+This repo is accepting PR's and welcoming issues. Feel free to contribute in any kind if
+
+- you find any bugs
+- you have ideas to make this library easier to use
+- you have ideas on how to improve the performance
+- you miss algorithm XY
+
+Just be nice.
 
 ## License
 
