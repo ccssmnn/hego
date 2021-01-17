@@ -8,19 +8,54 @@ import (
 
 func TestVerifyPSOSettings(t *testing.T) {
 	settings := PSOSettings{}
-	err := settings.Verify()
-	if err == nil {
-		t.Error("expected es settings verification to fail with no custom settings")
-	}
-	settings.LearningRate = 0.1
-	err = settings.Verify()
-	if err == nil {
-		t.Error("expected es settings verification to fail without population size set")
-	}
 	settings.PopulationSize = 10
+	settings.LearningRate = 0.1
+	settings.Omega = 0.1
+	settings.GlobalWeight = 0.1
+	settings.ParticleWeight = 0.1
+
+	err := settings.Verify()
+	if err != nil {
+		t.Error("expected verification to pass with these valid settings")
+	}
+
+	settings.PopulationSize = 0
 	err = settings.Verify()
 	if err == nil {
-		t.Error("expected es settings verification to fail without sigma set")
+		t.Error("expected verification to fail with populationsize 0")
+	}
+
+	settings.PopulationSize = 10
+	settings.LearningRate = 0.0
+	err = settings.Verify()
+	if err == nil {
+		t.Error("expected verification to fail with learningrate 0")
+	}
+
+	settings.LearningRate = 0.0
+	settings.Omega = -1.0
+	err = settings.Verify()
+	if err == nil {
+		t.Error("expected verification to fail with negative omega")
+	}
+
+	settings.Omega = 1.0
+	settings.GlobalWeight = -1.0
+	err = settings.Verify()
+	if err == nil {
+		t.Error("expected verification to fail with negative globalweight")
+	}
+	settings.GlobalWeight = 1.0
+	settings.ParticleWeight = -1.0
+	err = settings.Verify()
+	if err == nil {
+		t.Error("expected verification to fail with negative ParticleWeight")
+	}
+	settings.ParticleWeight = 0.0
+	settings.GlobalWeight = 0.0
+	err = settings.Verify()
+	if err == nil {
+		t.Error("expected verification to fail with both zero particle weight and global weight")
 	}
 }
 

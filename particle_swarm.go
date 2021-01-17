@@ -1,6 +1,7 @@
 package hego
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -45,6 +46,9 @@ func (s *PSOSettings) Verify() error {
 	}
 	if s.ParticleWeight < 0.0 {
 		return fmt.Errorf("ParticleWeight should not be smaller than 0, got %v", s.ParticleWeight)
+	}
+	if s.ParticleWeight == 0.0 && s.GlobalWeight == 0.0 {
+		return errors.New("when ParticleWeight and GlobalWeight are set to 0, the velocity will not change at all")
 	}
 	return nil
 }
