@@ -133,6 +133,31 @@ func TestWeightedChoice(t *testing.T) {
 	weightedChoice(weights, 0)
 }
 
+func TestBinaryWeightedChoice(t *testing.T) {
+	weights := []float64{1.0, 2.0, 0.0}
+	n := 20
+	choices := binaryWeightedChoice(weights, n)
+	if len(choices) != n {
+		t.Errorf("expected number of choices to be %v, got %v", n, len(choices))
+	}
+	for _, choice := range choices {
+		if choice == 2 {
+			t.Error("2 should not be a choice")
+		}
+	}
+	weights = []float64{0.0, 0.0, 0.0}
+	choices = binaryWeightedChoice(weights, n)
+	if choices[0] != -1 {
+		t.Errorf("binaryWeightedChoice should return -1 if probability of every choice is 0, got: %v", choices[0])
+	}
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("weighted choice should fail for 0 or less choices")
+		}
+	}()
+	binaryWeightedChoice(weights, 0)
+}
+
 func TestTournament(t *testing.T) {
 	weights := []float64{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0}
 	index := tournament(weights)

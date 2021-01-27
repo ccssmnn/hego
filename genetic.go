@@ -11,7 +11,7 @@ import (
 
 // weightedChoice returns n indizes with a probability defined by weights
 // weightedChoice([0.5, 0.3, 0.2], 3) will return 3 indizes. 0 with probability 0.5
-// panics if n < 1
+// panics if n < 1, returns -1 if all weights are 0
 func weightedChoice(weights []float64, n int) []int {
 	if n < 1 {
 		panic("n should be at least 1")
@@ -36,6 +36,48 @@ func weightedChoice(weights []float64, n int) []int {
 		}
 	}
 	return indizes
+}
+
+// binaryWeightedChoice returns n indizes with a probability defined by weights
+// it uses a binary search and is more efficient for n > 1 than weightedChoice
+// panics if n < 1, returns -1 if all weights are 0
+func binaryWeightedChoice(weights []float64, n int) []int {
+	if len(weights) == 0 {
+		panic("length of weights slice is 0")
+	}
+	if n < 1 {
+		panic("number of choices should be 1 or more")
+	}
+	accumulatedWeights := make([]float64, len(weights))
+	cur := 0.0
+	for i := 0; i < len(weights); i++ {
+		cur += weights[i]
+		accumulatedWeights[i] = cur
+	}
+	if accumulatedWeights[len(accumulatedWeights)-1] == 0.0 {
+		return []int{-1}
+	}
+	makeChoice := func() int {
+		target := rand.Float64() * accumulatedWeights[len(weights)-1]
+		low, high := 0, len(weights)
+		for low < high {
+			mid := (low + high) / 2
+			distance := accumulatedWeights[mid]
+			if distance < target {
+				low = mid + 1
+			} else if distance > target {
+				high = mid
+			} else {
+				return mid
+			}
+		}
+		return low
+	}
+	choices := make([]int, n)
+	for i := range choices {
+		choices[i] = makeChoice()
+	}
+	return choices
 }
 
 // Genome represents a genome (candidate) in the genetic algorithm
@@ -127,7 +169,7 @@ func (p population) fitnessProportionalSelection(n int) []int {
 	for i, c := range p {
 		weights[i] = math.Max(worst-c.fitness, 1e-10)
 	}
-	return weightedChoice(weights, n)
+	return binaryWeightedChoice(weights, n)
 }
 
 func (p population) rankBasedSelection(n int) []int {
@@ -136,7 +178,7 @@ func (p population) rankBasedSelection(n int) []int {
 	for i := range p {
 		weights[i] = float64(len(p) - i)
 	}
-	return weightedChoice(weights, n)
+	return binaryWeightedChoice(weights, n)
 }
 
 func tournament(weights []float64) int {
