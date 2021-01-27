@@ -42,9 +42,6 @@ func weightedChoice(weights []float64, n int) []int {
 // it uses a binary search and is more efficient for n > 1 than weightedChoice
 // panics if n < 1, returns -1 if all weights are 0
 func binaryWeightedChoice(weights []float64, n int) []int {
-	if len(weights) == 0 {
-		panic("length of weights slice is 0")
-	}
 	if n < 1 {
 		panic("number of choices should be 1 or more")
 	}
