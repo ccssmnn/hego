@@ -1,7 +1,6 @@
 package hego
 
 import (
-	"math"
 	"testing"
 )
 
@@ -30,7 +29,7 @@ func TestVerifyESSettings(t *testing.T) {
 
 func TestES(t *testing.T) {
 	f := func(x []float64) float64 {
-		return math.Pow(x[0], 2)
+		return x[0] * x[0]
 	}
 	x0 := []float64{10.0}
 	settings := ESSettings{}

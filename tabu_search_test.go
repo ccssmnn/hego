@@ -1,22 +1,23 @@
 package hego
 
 import (
+	"math"
 	"math/rand"
 	"testing"
 )
 
-type tabuState []bool
+type tabuState float64
 
 func (b tabuState) Equal(other TabuState) bool {
-	return false
+	return b == other.(tabuState)
 }
 
 func (b tabuState) Objective() float64 {
-	return rand.Float64()
+	return float64(b * b)
 }
 
 func (b tabuState) Neighbor() TabuState {
-	return b
+	return b + tabuState(rand.NormFloat64()*0.1)
 }
 
 func TestVerifyTSSettings(t *testing.T) {
@@ -42,19 +43,22 @@ func TestVerifyTSSettings(t *testing.T) {
 
 // TestAnnealBit runs the AnnealBit method and checks for errors
 func TestTS(t *testing.T) {
-	initialState := tabuState{false, true, false}
+	initialState := tabuState(10.0)
 
 	settings := TSSettings{}
 	_, err := TS(initialState, settings)
 	if err == nil {
 		t.Error("SA should fail with invalid settings")
 	}
-	settings.NeighborhoodSize = 100.0
+	settings.NeighborhoodSize = 100
 	settings.TabuListSize = 5
-	settings.MaxIterations = 10
+	settings.MaxIterations = 100
 	settings.Verbose = 1
-	_, err = TS(initialState, settings)
+	res, err := TS(initialState, settings)
 	if err != nil {
-		t.Errorf("Error while running Anneal main algorithm: %v", err)
+		t.Errorf("Error while running tabu search algorithm: %v", err)
+	}
+	if math.Abs(float64(res.States[len(res.States)-1].(tabuState))) > 0.5 {
+		t.Errorf("Unexpected optimization Result")
 	}
 }

@@ -1,18 +1,19 @@
 package hego
 
 import (
+	"math"
 	"math/rand"
 	"testing"
 )
 
-type state []bool
+type state float64
 
 func (b state) Energy() float64 {
-	return rand.Float64()
+	return float64(b * b)
 }
 
 func (b state) Neighbor() AnnealingState {
-	return b
+	return b + state(rand.NormFloat64()*0.1)
 }
 
 func TestVerify(t *testing.T) {
@@ -43,16 +44,16 @@ func TestVerify(t *testing.T) {
 
 // TestAnnealBit runs the AnnealBit method and checks for errors
 func TestSA(t *testing.T) {
-	initialState := state{false, true, false}
+	initialState := state(20.0)
 
 	settings := SASettings{}
 	res, err := SA(initialState, settings)
 	if err == nil {
 		t.Error("SA should fail with invalid settings")
 	}
-	settings.Temperature = 100.0
-	settings.AnnealingFactor = 0.9
-	settings.MaxIterations = 10
+	settings.Temperature = 50.0
+	settings.AnnealingFactor = 0.99
+	settings.MaxIterations = 1000
 	settings.Verbose = 1
 	res, err = SA(initialState, settings)
 	if err != nil {
@@ -60,5 +61,8 @@ func TestSA(t *testing.T) {
 	}
 	if len(res.Energies) != settings.MaxIterations {
 		t.Errorf("Wrong number of energy values received: expected %v, got %v", settings.MaxIterations, len(res.States))
+	}
+	if math.Abs(res.Energies[len(res.Energies)-1]) > 0.5 {
+		t.Error("unexpected solution")
 	}
 }

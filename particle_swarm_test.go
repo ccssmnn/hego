@@ -1,7 +1,6 @@
 package hego
 
 import (
-	"math"
 	"math/rand"
 	"testing"
 )
@@ -61,7 +60,7 @@ func TestVerifyPSOSettings(t *testing.T) {
 
 func TestPSO(t *testing.T) {
 	f := func(x []float64) float64 {
-		return math.Pow(x[0], 2)
+		return x[0] * x[0]
 	}
 	init := func() ([]float64, []float64) {
 		return []float64{-10 + rand.Float64()*20}, []float64{rand.Float64() * 20.0}
