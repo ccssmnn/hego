@@ -15,10 +15,11 @@ var nightIndex int
 var nursesPerShift []int
 var shiftRequests [][][]bool // [d, s, n], true when n wants shift s on day d
 var offRequests [][]bool     // [d, n], true when n wants off on day d
+var shiftWeight float64
+var offWeight float64
 
-const shiftWeight = 1.0
-const offWeight = 2.0
-
+// scheduleQuality returns a quality value for respecting shift requests and off
+// requests
 func scheduleQuality(schedule [][][]bool) float64 {
 	quality := 0.0
 	for d := 0; d < days; d++ {
@@ -36,126 +37,122 @@ func scheduleQuality(schedule [][][]bool) float64 {
 	return quality
 }
 
-var bestPerformance = math.MaxFloat64
-var pheromones = [7][3][5]float64{}
+var twoShiftsPenalty float64
+var noNightShiftBreakPenalty float64
 
-type ant struct {
-	day                int        // current day
-	shift              int        // current shift
-	nurseCount         int        // current nursecount for shift and day
-	shiftPerNurse      []int      // number of shifts for each nurse
-	nightShiftPerNurse []int      // number of night shifts for each nurse
-	schedule           [][][]bool // solution
+// schedulePenalty returns a penalty value for schedule properties that we want
+// to avoid. e.g. having two shifts on the same day or working on a day after
+// having a night shift
+func schedulePenalty(schedule [][][]bool) float64 {
+	penalty := 0.0
+	for d := 0; d < days; d++ {
+		shiftToday := make([]bool, nurses)
+		for s := 0; s < shifts; s++ {
+			for n := 0; n < nurses; n++ {
+				if schedule[d][s][n] {
+					// penalize two shifts on the same day
+					if shiftToday[n] {
+						penalty += twoShiftsPenalty
+					} else {
+						shiftToday[n] = true
+					}
+					// penalize having a day shift after a night shift
+					if d > 0 && schedule[d-1][nightIndex][n] && s != nightIndex {
+						penalty += noNightShiftBreakPenalty
+					}
+				}
+			}
+		}
+	}
+	return penalty
 }
 
-// Init resets current state of ant
-func (a *ant) Init() {
-	a.day = 0
-	a.shift = 0
-	a.nurseCount = 0
-	a.shiftPerNurse = make([]int, nurses)
-	a.nightShiftPerNurse = make([]int, nurses)
-	a.schedule = make([][][]bool, days)
+// we use a global schedule array for performance reasons
+var schedule [][][]bool
+
+func initSchedule() {
+	schedule = make([][][]bool, days)
 	for d := 0; d < days; d++ {
-		shift := make([][]bool, shifts)
+		schedule[d] = make([][]bool, shifts)
 		for s := 0; s < shifts; s++ {
-			assignment := make([]bool, nurses)
-			shift[s] = assignment
+			schedule[d][s] = make([]bool, nurses)
 		}
-		a.schedule[d] = shift
 	}
+}
+
+// sets all assignments in this schedule to false
+func resetSchedule() {
+	for d := range schedule {
+		for s := range schedule[d] {
+			for n := range schedule[d][s] {
+				schedule[d][s][n] = false
+			}
+		}
+	}
+}
+
+type shift struct {
+	day   int
+	shift int
+}
+
+var allShifts []shift
+var pheromones = [][]float64{} // probability for each shift to be assigned to one nurse
+
+type ant struct {
+	index       int   // index of current shift
+	assignments []int // which nurse is doing which shift
+}
+
+// Init resets internal state of ant
+func (a *ant) Init() {
+	a.index = 0
+	a.assignments = make([]int, len(allShifts))
 }
 
 // Step adds `next` nurse to current day and current shift. When shift is full, goes to next shift/day. Returns true, when schedule is finished
 func (a *ant) Step(next int) bool {
-	// reset when next is invalid
-	if next == -1 {
-		a.Init()
-		return false
-	}
-	a.schedule[a.day][a.shift][next] = true
-	a.shiftPerNurse[next]++
-	if a.shift == nightIndex {
-		a.nightShiftPerNurse[next]++
-	}
-	a.nurseCount++
-	// go to next shift
-	if a.nurseCount == nursesPerShift[a.shift] {
-		a.nurseCount = 0
-		a.shift++
-	}
-	// go to next day
-	if a.shift == shifts {
-		a.shift = 0
-		a.day++
-	}
-	return a.day == days
+	a.assignments[a.index] = next
+	a.index++
+	return a.index == len(allShifts)
 }
 
 // PerceivePheromone returns pheromone values. For unfeasible selections the pheromone value is set to 0
 func (a *ant) PerceivePheromone() []float64 {
 	res := make([]float64, nurses)
-	copy(res, pheromones[a.day][a.shift][:])
-	// increase probability if nurse has requested this shift
-	// and reduce if nurse has requested day off
-	for s := 0; s < shifts; s++ {
-		for n := 0; n < nurses; n++ {
-			if shiftRequests[a.day][s][n] {
-				res[n] *= 2.0
-			}
-			if offRequests[a.day][n] {
-				res[n] /= 2.0
-			}
-		}
-	}
-	// do not take nurse, that already has a shift this day
-	for s := 0; s < shifts; s++ {
-		for n := 0; n < nurses; n++ {
-			if a.schedule[a.day][s][n] {
-				res[n] = 0.0
-			}
-		}
-	}
-	// do not take nurse, that had night shift the day before or has reached maxNightShift
-	if a.day > 0 {
-		for n := 0; n < nurses; n++ {
-			if a.schedule[a.day-1][nightIndex][n] || a.nightShiftPerNurse[n] == maxNightShift {
-				res[n] = 0.0
-			}
-		}
-	}
+	copy(res, pheromones[a.index][:])
 	return res
 }
 
 // DropPheromone increases pheromone amount by 0.2 not considering the performance
 func (a *ant) DropPheromone(performance float64) {
-	for d := 0; d < days; d++ {
-		for s := 0; s < shifts; s++ {
-			for n := 0; n < nurses; n++ {
-				pheromones[d][s][n] = 1 / (1 + (bestPerformance-performance)/bestPerformance)
-			}
-		}
+	for i, asmnt := range a.assignments {
+		pheromones[i][asmnt] += 0.1
 	}
 }
 
 // Evaporate increases pheromone amount by 0.2 not considering the performance
 func (a *ant) Evaporate(factor, min float64) {
-	for d := 0; d < days; d++ {
-		for s := 0; s < shifts; s++ {
-			for n := 0; n < nurses; n++ {
-				pheromones[d][s][n] = math.Max(min, pheromones[d][s][n]*factor)
-			}
+	for s := range allShifts {
+		for n := 0; n < nurses; n++ {
+			pheromones[s][n] = math.Max(min, pheromones[s][n]*factor)
 		}
+	}
+}
+
+// resets schedule and writes nurse assignments into the schedule
+func (a *ant) fillSchedule() {
+	resetSchedule()
+	for i, assignment := range a.assignments {
+		s := allShifts[i]
+		schedule[s.day][s.shift][assignment] = true
 	}
 }
 
 // Performance returns negative schedule quality
 func (a *ant) Performance() float64 {
-	performance := -scheduleQuality(a.schedule)
-	if performance < bestPerformance {
-		bestPerformance = performance
-	}
-	return performance
+	a.fillSchedule()
+	return -scheduleQuality(schedule) + schedulePenalty(schedule)
 }
 
 func main() {
@@ -168,6 +165,10 @@ func main() {
 	nursesPerShift = []int{1, 1, 1}
 	shiftRequests = make([][][]bool, days)
 	offRequests = make([][]bool, days)
+	shiftWeight = 1.0              // weight for respecting a shift request
+	offWeight = 2.0                // weight for respecting an off request
+	twoShiftsPenalty = 5.0         // penalty for having two shifts on the same day
+	noNightShiftBreakPenalty = 5.0 // penalty for working on a day after a night shift
 
 	for d := 0; d < days; d++ {
 		shiftRequests[d] = make([][]bool, shifts)
@@ -203,23 +204,39 @@ func main() {
 	shiftRequests[4][0][4] = true
 	shiftRequests[5][1][4] = true
 
-	initialPheromone := 1.0
-	// reset pheromones
+	// init schedule
+	initSchedule()
+
+	// init shift slice containing all shifts that need to be assigned
+	allShifts = make([]shift, 0)
 	for d := 0; d < days; d++ {
 		for s := 0; s < shifts; s++ {
-			for n := 0; n < nurses; n++ {
-				pheromones[d][s][n] = initialPheromone
+			for n := 0; n < nursesPerShift[s]; n++ {
+				allShifts = append(allShifts, shift{day: d, shift: s})
 			}
 		}
 	}
+
+	initialPheromone := 1.0
+	// reset pheromones
+	pheromones = make([][]float64, len(allShifts))
+	for s := range allShifts {
+		p := make([]float64, nurses)
+		for n := 0; n < nurses; n++ {
+			p[n] = initialPheromone
+		}
+		pheromones[s] = p
+	}
+
 	population := make([]hego.Ant, 100)
 	for i := range population {
 		population[i] = &ant{}
 	}
+
 	settings := hego.ACOSettings{}
-	settings.Evaporation = 0.999
-	settings.MinPheromone = 0.01
-	settings.MaxIterations = 10000
+	settings.Evaporation = 0.99
+	settings.MinPheromone = 0.1
+	settings.MaxIterations = 1000
 	settings.Verbose = settings.MaxIterations / 10 // log 10 steps to look at convergence behaviour
 	result, err := hego.ACO(population, settings)
 
@@ -227,17 +244,18 @@ func main() {
 		fmt.Printf("Got error while running Ant Colony Optimization: %v", err)
 		return
 	}
-	fmt.Printf("Finished Ant Colony Optimization in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
+	fmt.Printf("Finished Ant Colony Optimization in %v!", result.Runtime)
 
-	finalSchedule := result.BestAnts[len(result.BestAnts)-1].(*ant).schedule
+	result.BestAnts[len(result.BestAnts)-1].(*ant).fillSchedule()
+
 	// print schedule
 	for d := 0; d < days; d++ {
 		fmt.Printf("\n\nDay %v", d)
 		for s := 0; s < shifts; s++ {
 			for n := 0; n < nurses; n++ {
-				if finalSchedule[d][s][n] && shiftRequests[d][s][n] {
+				if schedule[d][s][n] && shiftRequests[d][s][n] {
 					fmt.Printf("\nNurse %v works shift %v (requested)", n, s)
-				} else if finalSchedule[d][s][n] {
+				} else if schedule[d][s][n] {
 					fmt.Printf("\nNurse %v works shift %v (not requested)", n, s)
 				}
 			}
