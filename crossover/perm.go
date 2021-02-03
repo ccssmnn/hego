@@ -76,3 +76,35 @@ func TwoPointPerm(a, b []int) []int {
 	}
 	return c
 }
+
+// OnePointInt randomly chooses intersection point. Takes all elements from
+// a, where the index is below the intersection point and b for the rest
+// panics if length is different
+func OnePointInt(a, b []int) []int {
+	if len(a) != len(b) {
+		panic("expected slices to have same length")
+	}
+	child := make([]int, len(a))
+	copy(child, a)
+	for i := rand.Intn(len(a)); i < len(a); i++ {
+		child[i] = b[i]
+	}
+	return child
+}
+
+// TwoPointInt is analogue to OnePointInt with two intersection points
+func TwoPointInt(a, b []int) []int {
+	if len(a) != len(b) {
+		panic("expected slices to have same length")
+	}
+	child := make([]int, len(a))
+	copy(child, a)
+	start, end := rand.Intn(len(a)), rand.Intn(len(a))
+	if start > end {
+		start, end = end, start
+	}
+	for i := start; i < end; i++ {
+		child[i] = b[i]
+	}
+	return child
+}
