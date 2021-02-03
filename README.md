@@ -6,6 +6,19 @@ hego aims to provide a consistent API for several metaheuristics (black box opti
 
 Even though most of the metaheuristics might fit to any kind of optimization problem most of them have some caveats / advantages in different fields. hego allows you to rapidly try different algorithms and experiment with the parameters in order to solve your problems in the best possible time-to-quality ratio.
 
+## Contents
+
+- [Algorithms](#algorithms)
+- [Usage](#usage)
+  - [Simulated Annealing](#simulated-annealing)
+  - [Genetic Algorithm](#genetic-algorithm)
+  - [Evolution Strategies](#evolution-strategies)
+  - [Particle Swarm Optimization](#particle-swarm-optimization)
+  - [Tabu Search](#tabu-search)
+- [Examples](#examples)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Algorithms
 
 Currently the following algorithms are implemented:
@@ -257,6 +270,7 @@ Finished Evolution Strategies Algorithm! Result: [-0.016051413222810604 -0.00704
 ```
 
 ### Particle Swarm Optimization
+
 For [Particle Swarm Optimization](https://en.wikipedia.org/wiki/Particle_swarm_optimization) you need to provide the objective function, one init method that initializes a particle and its velocity and the algorithm settings. PSO is also designed for continuous optimization problems.
 
 ```golang
@@ -304,7 +318,9 @@ func main() {
 	return
 }
 ```
+
 Logs
+
 ```
 Iteration      Population Mean          Population Best
            0    37.02758959218644       1.0903639395271298
@@ -320,7 +336,7 @@ Iteration      Population Mean          Population Best
          999   10.112701340657786                        0
 
 Done after 13.589655ms!
-Finished Particle Swarm Optimization! Result: [-1.6137381095924141e-09 -1.632641297328185e-09], Value: 0 
+Finished Particle Swarm Optimization! Result: [-1.6137381095924141e-09 -1.632641297328185e-09], Value: 0
 ```
 
 ### Tabu Search
@@ -411,11 +427,12 @@ Finished Tabu Search in 7.11896ms! Result: [-0.001324101190205762 0.001397133465
 
 ## Examples
 
-hego contains a detailed examples directory. It is ordered by problem type and shows how to use hego to find solutions for these types of problems:
+hego contains a detailed examples directory. It is ordered by problem type and shows how to apply hego's algorithms to these types of problems:
 
 - Traveling Salesman Problem, an integer encoded permutation problem for finding the shortest path to visit all cities ([wikipedia](https://en.wikipedia.org/wiki/Travelling_salesman_problem))
 - Knapsack Problem, a binary encoded combinatorical optimization problem to select items to get be best value while respecting the maximum weight ([wikipedia](https://en.wikipedia.org/wiki/Knapsack_problem))
 - Rastrigin Function, a non convex function with a large number of local minima ([wikipedia](https://en.wikipedia.org/wiki/Rastrigin_function))
+- Nurse Scheduling Problem, a scheduling problem for assigning shifts to nurses with constraints ([wikipedia](https://en.wikipedia.org/wiki/Nurse_scheduling_problem))
 
 ## Contributing
 
