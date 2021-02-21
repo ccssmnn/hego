@@ -1,29 +1,23 @@
 package hego
 
 import (
+	"math"
 	"math/rand"
 	"testing"
 )
 
-var crossoverCount int
-var fitnessCount int
-var mutateCount int
-
-type genome [2]bool
+type genome float64
 
 func (b genome) Crossover(other Genome) Genome {
-	crossoverCount++
-	return b
+	return b + genome(rand.Float64())*(b-other.(genome))
 }
 
 func (b genome) Fitness() float64 {
-	fitnessCount++
-	return rand.Float64()
+	return float64(b * b)
 }
 
 func (b genome) Mutate() Genome {
-	mutateCount++
-	return b
+	return b + genome(rand.NormFloat64())
 }
 
 func TestVerifyGASettings(t *testing.T) {
@@ -62,22 +56,15 @@ func TestGenetic(t *testing.T) {
 		t.Error("verifification should fail for invalid mutation rate")
 	}
 
-	settings.MutationRate = 0.0
+	settings.MutationRate = 0.1
 	settings.Elitism = 1
-	settings.MaxIterations = 10
-	settings.Verbose = 1
+	settings.MaxIterations = 100
+	settings.Verbose = 10
 
 	for i := range population {
-		candidate := genome{}
-		for index := range candidate {
-			candidate[index] = rand.Float64() > 0.5
-		}
+		candidate := genome(-20.0 + 40.0*rand.Float64())
 		population[i] = candidate
 	}
-
-	crossoverCount = 0
-	fitnessCount = 0
-	mutateCount = 0
 
 	res, err = GA(population, settings)
 
@@ -87,24 +74,8 @@ func TestGenetic(t *testing.T) {
 	if res.Iterations != settings.MaxIterations {
 		t.Errorf("unexpected number of iterations. Expected %v, got %v", settings.MaxIterations, res.Iterations)
 	}
-	expectedCrossoverCount := settings.MaxIterations*populationSize - settings.MaxIterations*settings.Elitism
-	if crossoverCount != expectedCrossoverCount {
-		t.Errorf("unexpected number of crossover operations: Expected %v, got %v", expectedCrossoverCount, crossoverCount)
-	}
-	expectedFitnessCount := settings.MaxIterations*populationSize - settings.MaxIterations*settings.Elitism
-	if crossoverCount != expectedFitnessCount {
-		t.Errorf("unexpected number of fitness calls: Expected %v, got %v", expectedFitnessCount, fitnessCount)
-	}
-	if mutateCount != 0 {
-		t.Errorf("unexpected number of mutate operations: Expected %v, got %v", 0, mutateCount)
-	}
-
-	// retry with 100% mutation rate
-	settings.MutationRate = 1.0
-	res, _ = GA(population, settings)
-	expectedMutateCount := settings.MaxIterations*populationSize - settings.MaxIterations*settings.Elitism
-	if mutateCount != expectedCrossoverCount {
-		t.Errorf("unexpected number of mutate operations: Expected %v, got %v", expectedMutateCount, mutateCount)
+	if math.Abs(res.BestFitness[len(res.BestFitness)-1]) > 0.5 {
+		t.Error("unexpected solution found")
 	}
 }
 
@@ -168,10 +139,10 @@ func TestTournament(t *testing.T) {
 
 func TestSelections(t *testing.T) {
 	pop := population{
-		candidate{genome: genome{true, true}, fitness: 4.0},
-		candidate{genome: genome{true, true}, fitness: 3.0},
-		candidate{genome: genome{true, true}, fitness: 2.0},
-		candidate{genome: genome{true, true}, fitness: 1.0},
+		candidate{genome: genome(1.0), fitness: 4.0},
+		candidate{genome: genome(1.0), fitness: 3.0},
+		candidate{genome: genome(1.0), fitness: 2.0},
+		candidate{genome: genome(1.0), fitness: 1.0},
 	}
 	settings := GASettings{}
 	settings.Selection = FitnessProportionalSelection
