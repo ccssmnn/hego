@@ -32,6 +32,9 @@ func newLogger(name string, cols []string, verbose, maxIter int) *logger {
 }
 
 func (l *logger) AddLine(i int, cols []string) {
+	if l.verbose == 0 {
+		return
+	}
 	if i%l.verbose == 0 || i+1 == l.maxIter {
 		fmt.Fprintln(l.writer, tabbedJoin(cols))
 	}
