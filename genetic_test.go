@@ -46,7 +46,7 @@ func TestVerifyGASettings(t *testing.T) {
 	}
 }
 
-func TestGenetic(t *testing.T) {
+func TestGA(t *testing.T) {
 	populationSize := 10
 	population := make([]Genome, populationSize)
 	settings := GASettings{}
@@ -60,6 +60,7 @@ func TestGenetic(t *testing.T) {
 	settings.Elitism = 1
 	settings.MaxIterations = 100
 	settings.Verbose = 10
+	settings.KeepIntermediateResults = true
 
 	for i := range population {
 		candidate := genome(-20.0 + 40.0*rand.Float64())
@@ -74,7 +75,7 @@ func TestGenetic(t *testing.T) {
 	if res.Iterations != settings.MaxIterations {
 		t.Errorf("unexpected number of iterations. Expected %v, got %v", settings.MaxIterations, res.Iterations)
 	}
-	if math.Abs(res.BestFitness[len(res.BestFitness)-1]) > 0.5 {
+	if math.Abs(res.BestFitness) > 0.5 {
 		t.Error("unexpected solution found")
 	}
 }

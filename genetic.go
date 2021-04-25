@@ -89,9 +89,11 @@ type Genome interface {
 
 // GAResult represents the result of the genetic algorithm
 type GAResult struct {
-	AveragedFitness []float64
-	BestFitness     []float64
-	BestGenome      []Genome
+	AveragedFitnesses []float64
+	BestFitnesses     []float64
+	BestGenomes       []Genome
+	BestGenome        Genome
+	BestFitness       float64
 	Result
 }
 
@@ -262,9 +264,13 @@ func GA(
 		pop[i].fitness = evaluate(pop[i].genome)
 	}
 
-	res.AveragedFitness = make([]float64, settings.MaxIterations)
-	res.BestFitness = make([]float64, settings.MaxIterations)
-	res.BestGenome = make([]Genome, settings.MaxIterations)
+	if settings.KeepIntermediateResults {
+		res.AveragedFitnesses = make([]float64, settings.MaxIterations)
+		res.BestFitnesses = make([]float64, settings.MaxIterations)
+		res.BestGenomes = make([]Genome, settings.MaxIterations)
+	}
+
+	res.BestFitness = math.MaxFloat64
 
 	for i := 0; i < settings.MaxIterations; i++ {
 		// FITNESS EVALUATION
@@ -278,14 +284,22 @@ func GA(
 				bestIndex = idx
 			}
 		}
-		res.AveragedFitness[i] = totalFitness / float64(len(pop))
-		res.BestFitness[i] = bestFitness
-		res.BestGenome[i] = pop[bestIndex].genome
+
+		if settings.KeepIntermediateResults {
+			res.AveragedFitnesses[i] = totalFitness / float64(len(pop))
+			res.BestFitnesses[i] = bestFitness
+			res.BestGenomes[i] = pop[bestIndex].genome
+		}
+
+		if res.BestFitness > bestFitness {
+			res.BestFitness = bestFitness
+			res.BestGenome = pop[bestIndex].genome
+		}
 
 		logger.AddLine(i, []string{
 			fmt.Sprint(i),
-			fmt.Sprint(res.AveragedFitness[i]),
-			fmt.Sprint(res.BestFitness[i]),
+			fmt.Sprint(totalFitness / float64(len(pop))),
+			fmt.Sprint(bestFitness),
 		})
 
 		// SELECTION

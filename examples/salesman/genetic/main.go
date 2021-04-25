@@ -101,5 +101,4 @@ func main() {
 		return
 	}
 	fmt.Printf("Finished Genetic Algorithm in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
-	return
 }
