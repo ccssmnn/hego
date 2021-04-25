@@ -72,7 +72,7 @@ func PSO(
 		res.FuncEvaluations++
 		return objective(x)
 	}
-	if settings.KeepIntermediateResults {
+	if settings.KeepHistory {
 		res.BestParticles = make([][]float64, 0, settings.MaxIterations)
 		res.BestObjectives = make([]float64, 0, settings.MaxIterations)
 	}
@@ -100,7 +100,7 @@ func PSO(
 		}
 	}
 
-	if settings.KeepIntermediateResults {
+	if settings.KeepHistory {
 		res.BestObjectives = append(res.BestObjectives, globalBestObj)
 		res.BestParticles = append(res.BestParticles, globalBest)
 	}
@@ -138,7 +138,7 @@ func PSO(
 			copy(next, globalBest)
 			res.BestObjective = globalBestObj
 			res.BestParticle = next
-			if settings.KeepIntermediateResults {
+			if settings.KeepHistory {
 				res.BestParticles = append(res.BestParticles, next)
 				res.BestObjectives = append(res.BestObjectives, globalBestObj)
 			}

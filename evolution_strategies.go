@@ -83,7 +83,7 @@ func ES(
 	candidate := make([]float64, len(x0))
 	copy(candidate, x0)
 
-	if settings.KeepIntermediateResults {
+	if settings.KeepHistory {
 		res.BestObjectives = make([]float64, settings.MaxIterations)
 		res.AverageObjectives = make([]float64, settings.MaxIterations)
 		res.Candidates = make([][]float64, settings.MaxIterations)
@@ -136,7 +136,7 @@ func ES(
 			candidate[j] -= settings.LearningRate * gradientEstimate
 		}
 		// update result
-		if settings.KeepIntermediateResults {
+		if settings.KeepHistory {
 			res.Candidates[i] = make([]float64, len(candidate))
 			copy(res.Candidates[i], candidate)
 			res.BestObjectives[i] = bestReward

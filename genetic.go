@@ -264,7 +264,7 @@ func GA(
 		pop[i].fitness = evaluate(pop[i].genome)
 	}
 
-	if settings.KeepIntermediateResults {
+	if settings.KeepHistory {
 		res.AveragedFitnesses = make([]float64, settings.MaxIterations)
 		res.BestFitnesses = make([]float64, settings.MaxIterations)
 		res.BestGenomes = make([]Genome, settings.MaxIterations)
@@ -285,7 +285,7 @@ func GA(
 			}
 		}
 
-		if settings.KeepIntermediateResults {
+		if settings.KeepHistory {
 			res.AveragedFitnesses[i] = totalFitness / float64(len(pop))
 			res.BestFitnesses[i] = bestFitness
 			res.BestGenomes[i] = pop[bestIndex].genome

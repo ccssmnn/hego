@@ -60,7 +60,7 @@ func TestGA(t *testing.T) {
 	settings.Elitism = 1
 	settings.MaxIterations = 100
 	settings.Verbose = 10
-	settings.KeepIntermediateResults = true
+	settings.KeepHistory = true
 
 	for i := range population {
 		candidate := genome(-20.0 + 40.0*rand.Float64())

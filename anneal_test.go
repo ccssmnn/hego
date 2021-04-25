@@ -55,7 +55,7 @@ func TestSA(t *testing.T) {
 	settings.AnnealingFactor = 0.99
 	settings.MaxIterations = 1000
 	settings.Verbose = 1
-	settings.KeepIntermediateResults = true
+	settings.KeepHistory = true
 	res, err = SA(initialState, settings)
 	if err != nil {
 		t.Errorf("Error while running Anneal main algorithm: %v", err)

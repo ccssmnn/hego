@@ -73,7 +73,7 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 
 	logger := newLogger("Ant Colony Optimization", []string{"Iteration", "Average Performance", "Best Performance"}, settings.Verbose, settings.MaxIterations)
 
-	if settings.KeepIntermediateResults {
+	if settings.KeepHistory {
 		res.AveragePerformances = make([]float64, settings.MaxIterations)
 		res.BestPerformances = make([]float64, settings.MaxIterations)
 		res.BestAnts = make([]Ant, settings.MaxIterations)
@@ -108,7 +108,7 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 		// population[bestIndex].DropPheromone(bestPerformance)
 		population[0].Evaporate(settings.Evaporation, settings.MinPheromone)
 
-		if settings.KeepIntermediateResults {
+		if settings.KeepHistory {
 			res.AveragePerformances[i] = totalPerformance / float64(len(population))
 			res.BestPerformances[i] = bestPerformance
 			res.BestAnts[i] = population[bestIndex]

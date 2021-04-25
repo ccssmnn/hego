@@ -83,7 +83,7 @@ func TS(
 		return false
 	}
 
-	if settings.KeepIntermediateResults {
+	if settings.KeepHistory {
 		res.States = make([]TabuState, 0, settings.MaxIterations)
 		res.Objectives = make([]float64, 0, settings.MaxIterations)
 	}
@@ -113,7 +113,7 @@ func TS(
 		state = bestNeighbor
 		obj = bestNeighborObj
 
-		if settings.KeepIntermediateResults && (len(res.Objectives) == 0 || res.Objectives[len(res.Objectives)-1] > bestNeighborObj) {
+		if settings.KeepHistory && (len(res.Objectives) == 0 || res.Objectives[len(res.Objectives)-1] > bestNeighborObj) {
 			res.States = append(res.States, state)
 			res.Objectives = append(res.Objectives, obj)
 		}

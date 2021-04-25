@@ -38,7 +38,7 @@ func TestACO(t *testing.T) {
 	settings.Evaporation = 0.9
 	settings.MaxIterations = 10
 	settings.Verbose = 1
-	settings.KeepIntermediateResults = true
+	settings.KeepHistory = true
 	res, err = ACO(pop, settings)
 	if err != nil {
 		t.Errorf("ACO shoud not fail, got: %v", err)

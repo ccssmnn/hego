@@ -83,7 +83,7 @@ func SA(
 	energy := evaluate(state)
 	temperature := settings.Temperature
 
-	if settings.KeepIntermediateResults {
+	if settings.KeepHistory {
 		res.States = make([]AnnealingState, 0, settings.MaxIterations)
 		res.Energies = make([]float64, settings.MaxIterations)
 	}
@@ -100,7 +100,7 @@ func SA(
 		if update {
 			state = candidate
 			energy = candidateEnergy
-			if settings.KeepIntermediateResults {
+			if settings.KeepHistory {
 				res.States = append(res.States, candidate)
 				res.Energies = append(res.Energies, candidateEnergy)
 			}
