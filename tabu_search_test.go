@@ -58,7 +58,7 @@ func TestTS(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error while running tabu search algorithm: %v", err)
 	}
-	if math.Abs(float64(res.States[len(res.States)-1].(tabuState))) > 0.5 {
+	if math.Abs(float64(res.BestState.(tabuState))) > 0.5 {
 		t.Errorf("Unexpected optimization Result")
 	}
 }
