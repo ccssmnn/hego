@@ -28,6 +28,5 @@ func main() {
 	if err != nil {
 		fmt.Printf("Got error while running Evolution Strategies Algorithm: %v", err)
 	}
-	fmt.Printf("Finished Evolution Strategies Algorithm! Result: %v, Value: %v \n", result.Candidates[result.Iterations-1], result.BestObjective[result.Iterations-1])
-	return
+	fmt.Printf("Finished Evolution Strategies Algorithm! Result: %v, Value: %v \n", result.BestCandidate, result.BestObjective)
 }

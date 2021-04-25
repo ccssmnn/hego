@@ -309,7 +309,7 @@ func GA(
 		res.Iterations++
 	}
 	logger.Flush()
-	res.Runtime = time.Now().Sub(start)
+	res.Runtime = time.Since(start)
 	if settings.Verbose > 0 {
 		fmt.Printf("DONE after %v\n", res.Runtime)
 	}

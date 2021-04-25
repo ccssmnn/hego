@@ -50,7 +50,7 @@ type ACOSettings struct {
 // Verify checks validity of the ACOSettings and returns nil if settings are ok
 func (s *ACOSettings) Verify() error {
 	if s.Evaporation <= 0 || s.Evaporation > 1 {
-		return errors.New("Evaporation must be a value in (0, 1]")
+		return errors.New("evaporation must be a value in (0, 1]")
 	}
 	return nil
 }

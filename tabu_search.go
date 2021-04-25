@@ -41,7 +41,7 @@ func (s *TSSettings) Verify() error {
 		return fmt.Errorf("size of neighborhood must be greater that 1, got %v", s.NeighborhoodSize)
 	}
 	if s.TabuListSize <= 1 {
-		return fmt.Errorf("Size of Tabu List must be larger than 1, got %v", s.TabuListSize)
+		return fmt.Errorf("size of Tabu List must be larger than 1, got %v", s.TabuListSize)
 	}
 	return nil
 }
@@ -68,7 +68,7 @@ func TS(
 	}
 
 	state := initialState
-	obj := evaluate(state)
+	var obj float64
 	tabuList := make([]TabuState, 0)
 
 	inList := func(s TabuState) bool {

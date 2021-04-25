@@ -43,7 +43,10 @@ func TestES(t *testing.T) {
 	settings.NoiseSigma = 0.1
 	settings.PopulationSize = 10
 	res, err := ES(f, x0, settings)
-	best := res.Candidates[len(res.Candidates)-1]
+	if err != nil {
+		t.Errorf("Unexpected error in ES algorithm: %v", err)
+	}
+	best := res.BestCandidate
 	if best[0] > 0.5 || best[0] < -0.5 {
 		t.Errorf("ES algorithm produced unexpected result. Wanted ~0.0, got %v", best[0])
 	}

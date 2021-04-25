@@ -10,9 +10,11 @@ import (
 
 // ESResult represents the result of the evolution strategy algorithm
 type ESResult struct {
-	Candidates       [][]float64
-	AverageObjective []float64
-	BestObjective    []float64
+	Candidates        [][]float64
+	AverageObjectives []float64
+	BestObjectives    []float64
+	BestCandidate     []float64
+	BestObjective     float64
 	Result
 }
 
@@ -40,7 +42,7 @@ func (s *ESSettings) Verify() error {
 		return fmt.Errorf("population size must be greater than 1, got %v", s.PopulationSize)
 	}
 	if s.NoiseSigma == 0.0 {
-		return errors.New("Sigma = 0.0 leads to no search at all")
+		return errors.New("sigma = 0.0 leads to no search at all")
 	}
 	return nil
 }
@@ -81,9 +83,14 @@ func ES(
 	candidate := make([]float64, len(x0))
 	copy(candidate, x0)
 
-	res.BestObjective = make([]float64, settings.MaxIterations)
-	res.AverageObjective = make([]float64, settings.MaxIterations)
-	res.Candidates = make([][]float64, settings.MaxIterations)
+	if settings.KeepIntermediateResults {
+		res.BestObjectives = make([]float64, settings.MaxIterations)
+		res.AverageObjectives = make([]float64, settings.MaxIterations)
+		res.Candidates = make([][]float64, settings.MaxIterations)
+	}
+
+	res.BestObjective = math.MaxFloat64
+	res.BestCandidate = make([]float64, len(x0))
 
 	// initialize memory for population and their rewards
 	population := make([][]float64, settings.PopulationSize)
@@ -129,10 +136,16 @@ func ES(
 			candidate[j] -= settings.LearningRate * gradientEstimate
 		}
 		// update result
-		res.Candidates[i] = make([]float64, len(candidate))
-		copy(res.Candidates[i], candidate)
-		res.BestObjective[i] = bestReward
-		res.AverageObjective[i] = meanReward
+		if settings.KeepIntermediateResults {
+			res.Candidates[i] = make([]float64, len(candidate))
+			copy(res.Candidates[i], candidate)
+			res.BestObjectives[i] = bestReward
+			res.AverageObjectives[i] = meanReward
+		}
+		if res.BestObjective > bestReward {
+			res.BestObjective = bestReward
+			copy(res.BestCandidate, candidate)
+		}
 
 		logger.AddLine(i, []string{
 			fmt.Sprint(i),
@@ -148,6 +161,5 @@ func ES(
 	if settings.Verbose > 0 {
 		fmt.Printf("Done after %v!\n", res.Runtime)
 	}
-
 	return res, nil
 }
