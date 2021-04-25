@@ -31,6 +31,10 @@ type ACOResult struct {
 	BestPerformances []float64
 	// BestAnts holds the best Ant for each iteration
 	BestAnts []Ant
+	// BestPerformance stores the overall best ants performance
+	BestPerformance float64
+	// BestAnt stores the overall best ant
+	BestAnt Ant
 	Result
 }
 
@@ -69,9 +73,13 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 
 	logger := newLogger("Ant Colony Optimization", []string{"Iteration", "Average Performance", "Best Performance"}, settings.Verbose, settings.MaxIterations)
 
-	res.AveragePerformances = make([]float64, settings.MaxIterations)
-	res.BestPerformances = make([]float64, settings.MaxIterations)
-	res.BestAnts = make([]Ant, settings.MaxIterations)
+	if settings.KeepIntermediateResults {
+		res.AveragePerformances = make([]float64, settings.MaxIterations)
+		res.BestPerformances = make([]float64, settings.MaxIterations)
+		res.BestAnts = make([]Ant, settings.MaxIterations)
+	}
+
+	res.BestPerformance = math.MaxFloat64
 
 	for i := 0; i < settings.MaxIterations; i++ {
 		totalPerformance := 0.0
@@ -100,14 +108,22 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 		// population[bestIndex].DropPheromone(bestPerformance)
 		population[0].Evaporate(settings.Evaporation, settings.MinPheromone)
 
-		res.AveragePerformances[i] = totalPerformance / float64(len(population))
-		res.BestPerformances[i] = bestPerformance
-		res.BestAnts[i] = population[bestIndex]
+		if settings.KeepIntermediateResults {
+			res.AveragePerformances[i] = totalPerformance / float64(len(population))
+			res.BestPerformances[i] = bestPerformance
+			res.BestAnts[i] = population[bestIndex]
+		}
+
+		if res.BestPerformance > bestPerformance {
+			res.BestPerformance = bestPerformance
+			res.BestAnt = population[bestIndex]
+		}
+
 		res.Iterations++
 		logger.AddLine(i, []string{
 			fmt.Sprint(i),
-			fmt.Sprint(res.AveragePerformances[i]),
-			fmt.Sprint(res.BestPerformances[i]),
+			fmt.Sprint(totalPerformance / float64(len(population))),
+			fmt.Sprint(bestPerformance),
 		})
 	}
 	end := time.Now()

@@ -10,7 +10,6 @@ import (
 var nurses int
 var shifts int
 var days int
-var maxNightShift int
 var nightIndex int
 var nursesPerShift []int
 var shiftRequests [][][]bool // [d, s, n], true when n wants shift s on day d
@@ -161,7 +160,6 @@ func main() {
 	shifts = 3
 	days = 7
 	nightIndex = 2
-	maxNightShift = 7 // no max night shift
 	nursesPerShift = []int{1, 1, 1}
 	shiftRequests = make([][][]bool, days)
 	offRequests = make([][]bool, days)
@@ -246,7 +244,7 @@ func main() {
 	}
 	fmt.Printf("Finished Ant Colony Optimization in %v!", result.Runtime)
 
-	result.BestAnts[len(result.BestAnts)-1].(*ant).fillSchedule()
+	result.BestAnt.(*ant).fillSchedule()
 
 	// print schedule
 	for d := 0; d < days; d++ {
@@ -262,5 +260,4 @@ func main() {
 		}
 	}
 	fmt.Print("\n")
-	return
 }
