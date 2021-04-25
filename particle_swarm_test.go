@@ -81,7 +81,7 @@ func TestPSO(t *testing.T) {
 	if err != nil {
 		t.Error("PSO should not fail")
 	}
-	best := res.BestParticles[len(res.BestParticles)-1]
+	best := res.BestParticle
 	if best[0] > 0.5 || best[0] < -0.5 {
 		t.Errorf("ES algorithm produced unexpected result. Wanted ~0.0, got %v", best[0])
 	}

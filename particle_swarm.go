@@ -12,6 +12,8 @@ import (
 type PSOResult struct {
 	BestParticles  [][]float64
 	BestObjectives []float64
+	BestParticle   []float64
+	BestObjective  float64
 	Result
 }
 
@@ -70,9 +72,12 @@ func PSO(
 		res.FuncEvaluations++
 		return objective(x)
 	}
-
-	res.BestParticles = make([][]float64, 0, settings.MaxIterations)
-	res.BestObjectives = make([]float64, 0, settings.MaxIterations)
+	if settings.KeepIntermediateResults {
+		res.BestParticles = make([][]float64, 0, settings.MaxIterations)
+		res.BestObjectives = make([]float64, 0, settings.MaxIterations)
+	}
+	res.BestObjective = math.MaxFloat64
+	res.BestParticle = make([]float64, 0)
 
 	// initialize population with velocities and best known positions
 	particles := make([][]float64, settings.PopulationSize)
@@ -83,7 +88,6 @@ func PSO(
 	globalBestObj := math.MaxFloat64
 
 	for i := range particles {
-
 		particles[i], velocities[i] = init()
 		bestObjs[i] = evaluate(particles[i])
 		bestPositions[i] = make([]float64, len(particles[i]))
@@ -96,8 +100,10 @@ func PSO(
 		}
 	}
 
-	res.BestObjectives = append(res.BestObjectives, globalBestObj)
-	res.BestParticles = append(res.BestParticles, globalBest)
+	if settings.KeepIntermediateResults {
+		res.BestObjectives = append(res.BestObjectives, globalBestObj)
+		res.BestParticles = append(res.BestParticles, globalBest)
+	}
 
 	for i := 0; i < settings.MaxIterations; i++ {
 		totalObj := 0.0
@@ -130,8 +136,13 @@ func PSO(
 		if newGlobalBest {
 			next := make([]float64, len(globalBest))
 			copy(next, globalBest)
-			res.BestParticles = append(res.BestParticles, next)
-			res.BestObjectives = append(res.BestObjectives, globalBestObj)
+			res.BestObjective = globalBestObj
+			res.BestParticle = next
+			if settings.KeepIntermediateResults {
+				res.BestParticles = append(res.BestParticles, next)
+				res.BestObjectives = append(res.BestObjectives, globalBestObj)
+			}
+
 		}
 		logger.AddLine(i, []string{
 			fmt.Sprint(i),
@@ -139,14 +150,11 @@ func PSO(
 			fmt.Sprint(globalBestObj),
 		})
 	}
-
-	end := time.Now()
-	res.Runtime = end.Sub(start)
+	res.Runtime = time.Since(start)
 	res.Iterations = settings.MaxIterations
 	logger.Flush()
 	if settings.Verbose > 0 {
 		fmt.Printf("Done after %v!\n", res.Runtime)
 	}
-
 	return res, nil
 }
