@@ -10,7 +10,6 @@ import (
 var nurses int
 var shifts int
 var days int
-var maxNightShift int
 var nightIndex int
 var nursesPerShift []int
 var shiftRequests [][][]bool // [d, s, n], true when n wants shift s on day d
@@ -175,7 +174,6 @@ func main() {
 	shifts = 3
 	days = 7
 	nightIndex = 2
-	maxNightShift = 7 // no max night shift
 	nursesPerShift = []int{1, 1, 1}
 	shiftWeight = 1.0              // weight for respecting a shift request
 	offWeight = 2.0                // weight for respecting an off request
@@ -256,9 +254,9 @@ func main() {
 		return
 	}
 	// extract result
-	solution := res.States[len(res.States)-1].(state)
+	solution := res.State.(state)
 	solution.fillSchedule()
-	fmt.Printf("The solution found has an energy of %v \n", solution.Energy())
+	fmt.Printf("The solution found has an energy of %v \n", res.Energy)
 	// print schedule
 	for d := 0; d < days; d++ {
 		fmt.Printf("\n\nDay %v", d)
@@ -273,5 +271,4 @@ func main() {
 		}
 	}
 	fmt.Print("\n")
-	return
 }
