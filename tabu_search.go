@@ -2,6 +2,7 @@ package hego
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -20,7 +21,9 @@ type TSResult struct {
 	// States holds the best states. Last element in this list is overall best solution
 	States []TabuState
 	// Objectives holds the best objectives. Each entry corresponds to an element in States
-	Objectives []float64
+	Objectives    []float64
+	BestState     TabuState
+	BestObjective float64
 	Result
 }
 
@@ -41,7 +44,7 @@ func (s *TSSettings) Verify() error {
 		return fmt.Errorf("size of neighborhood must be greater that 1, got %v", s.NeighborhoodSize)
 	}
 	if s.TabuListSize <= 1 {
-		return fmt.Errorf("Size of Tabu List must be larger than 1, got %v", s.TabuListSize)
+		return fmt.Errorf("size of Tabu List must be larger than 1, got %v", s.TabuListSize)
 	}
 	return nil
 }
@@ -68,7 +71,7 @@ func TS(
 	}
 
 	state := initialState
-	obj := evaluate(state)
+	var obj float64
 	tabuList := make([]TabuState, 0)
 
 	inList := func(s TabuState) bool {
@@ -80,8 +83,12 @@ func TS(
 		return false
 	}
 
-	res.States = make([]TabuState, 0, settings.MaxIterations)
-	res.Objectives = make([]float64, 0, settings.MaxIterations)
+	if settings.KeepHistory {
+		res.States = make([]TabuState, 0, settings.MaxIterations)
+		res.Objectives = make([]float64, 0, settings.MaxIterations)
+	}
+
+	res.BestObjective = math.MaxFloat64
 
 	for i := 0; i < settings.MaxIterations; i++ {
 
@@ -106,9 +113,14 @@ func TS(
 		state = bestNeighbor
 		obj = bestNeighborObj
 
-		if len(res.Objectives) == 0 || res.Objectives[len(res.Objectives)-1] > bestNeighborObj {
+		if settings.KeepHistory && (len(res.Objectives) == 0 || res.Objectives[len(res.Objectives)-1] > bestNeighborObj) {
 			res.States = append(res.States, state)
 			res.Objectives = append(res.Objectives, obj)
+		}
+
+		if res.BestObjective > obj {
+			res.BestObjective = obj
+			res.BestState = state
 		}
 
 		res.Iterations++
@@ -122,19 +134,17 @@ func TS(
 			logger.AddLine(i, []string{
 				fmt.Sprint(i),
 				fmt.Sprint(obj),
-				fmt.Sprint(res.Objectives[len(res.Objectives)-1]),
+				fmt.Sprint(res.BestObjective),
 			})
 		}
 	}
 
-	end := time.Now()
-	res.Runtime = end.Sub(start)
+	res.Runtime = time.Since(start)
 	res.Iterations = settings.MaxIterations
 
 	logger.Flush()
 	if settings.Verbose > 0 {
 		fmt.Printf("Done after %v!\n", res.Runtime)
 	}
-
 	return
 }

@@ -97,8 +97,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Got error while running Anneal: %v", err)
 	}
-	finalState := result.States[len(result.States)-1]
+	finalState := result.BestState
 	finalEnergy := finalState.Objective()
 	fmt.Printf("Finished Tabu Search in %v! Tour Length: %v \n", result.Runtime, finalEnergy)
-	return
 }

@@ -15,6 +15,8 @@ type Settings struct {
 	// Verbose controls wether the algorithm should log information into the
 	// console. 0 means no logging, n will log every n iterations
 	Verbose int
+	// KeepHistory, when true intermediate results are stored
+	KeepHistory bool
 }
 
 // Result represents result information of the optimization, including

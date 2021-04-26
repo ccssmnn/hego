@@ -125,5 +125,4 @@ func main() {
 	} else {
 		fmt.Printf("Finished Ant Colony Optimization in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
 	}
-	return
 }

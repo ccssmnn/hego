@@ -23,6 +23,7 @@ func TestVerifyPSOSettings(t *testing.T) {
 	if err == nil {
 		t.Error("expected verification to fail with populationsize 0")
 	}
+	err = nil
 
 	settings.PopulationSize = 10
 	settings.LearningRate = 0.0
@@ -30,13 +31,15 @@ func TestVerifyPSOSettings(t *testing.T) {
 	if err == nil {
 		t.Error("expected verification to fail with learningrate 0")
 	}
+	err = nil
 
-	settings.LearningRate = 0.0
+	settings.LearningRate = 1.0
 	settings.Omega = -1.0
 	err = settings.Verify()
 	if err == nil {
 		t.Error("expected verification to fail with negative omega")
 	}
+	err = nil
 
 	settings.Omega = 1.0
 	settings.GlobalWeight = -1.0
@@ -44,12 +47,14 @@ func TestVerifyPSOSettings(t *testing.T) {
 	if err == nil {
 		t.Error("expected verification to fail with negative globalweight")
 	}
+	err = nil
 	settings.GlobalWeight = 1.0
 	settings.ParticleWeight = -1.0
 	err = settings.Verify()
 	if err == nil {
 		t.Error("expected verification to fail with negative ParticleWeight")
 	}
+	err = nil
 	settings.ParticleWeight = 0.0
 	settings.GlobalWeight = 0.0
 	err = settings.Verify()
@@ -81,8 +86,19 @@ func TestPSO(t *testing.T) {
 	if err != nil {
 		t.Error("PSO should not fail")
 	}
-	best := res.BestParticles[len(res.BestParticles)-1]
+	best := res.BestParticle
 	if best[0] > 0.5 || best[0] < -0.5 {
-		t.Errorf("ES algorithm produced unexpected result. Wanted ~0.0, got %v", best[0])
+		t.Errorf("PSO algorithm produced unexpected result. Wanted ~0.0, got %v", best[0])
+	}
+	if len(res.BestParticles) != 0 {
+		t.Error("expected BestParticles to be empty with KeepHistory=false")
+	}
+	settings.KeepHistory = true
+	res, err = PSO(f, init, settings)
+	if err != nil {
+		t.Error("PSO should not fail")
+	}
+	if len(res.BestParticles) == 0 {
+		t.Error("expected BestParticles to contain values, got 0")
 	}
 }

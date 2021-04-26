@@ -68,7 +68,5 @@ func main() {
 		fmt.Printf("Got error while running Anneal: %v", err)
 		return
 	}
-	// extract result
-	solution := res.States[len(res.States)-1].Objective()
-	fmt.Printf("The solution found has an objective of %v \n", solution)
+	fmt.Printf("The solution found has an objective of %v \n", res.BestObjective)
 }

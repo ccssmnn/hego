@@ -26,7 +26,6 @@ func (s state) Energy() float64 {
 }
 
 func main() {
-
 	initialState := state{5.0, 5.0}
 
 	settings := hego.SASettings{}
@@ -41,8 +40,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Got error while running Anneal: %v", err)
 	}
-	finalState := result.States[len(result.States)-1]
-	finalEnergy := finalState.Energy()
+	finalState := result.State
+	finalEnergy := result.Energy
 	fmt.Printf("Finished Simulated Annealing in %v! Result: %v, Value: %v \n", result.Runtime, finalState, finalEnergy)
-	return
 }

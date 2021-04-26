@@ -17,9 +17,15 @@ type AnnealingState interface {
 // SAResult represents the result of the Anneal optimization. The last state
 // and last energy are the final results. It extends the basic Result type
 type SAResult struct {
-	// States hold every state during the process (updated on state change)
+	// State is the result state
+	State AnnealingState
+	// Energy is the result Energy
+	Energy float64
+	// States when KeepIntermediateResults is set hold every state during the
+	// process (updated on state change)
 	States []AnnealingState
-	// Energies hold the energy value of every state in the process
+	// Energies when KeepIntermediateResults is set hold the energy value of
+	// every state in the process
 	Energies []float64
 	Result
 }
@@ -77,8 +83,10 @@ func SA(
 	energy := evaluate(state)
 	temperature := settings.Temperature
 
-	res.States = make([]AnnealingState, 0, settings.MaxIterations)
-	res.Energies = make([]float64, settings.MaxIterations)
+	if settings.KeepHistory {
+		res.States = make([]AnnealingState, 0, settings.MaxIterations)
+		res.Energies = make([]float64, settings.MaxIterations)
+	}
 
 	for i := 0; i < settings.MaxIterations; i++ {
 		candidate := state.Neighbor()
@@ -92,11 +100,13 @@ func SA(
 		if update {
 			state = candidate
 			energy = candidateEnergy
-			res.States = append(res.States, state)
+			if settings.KeepHistory {
+				res.States = append(res.States, candidate)
+				res.Energies = append(res.Energies, candidateEnergy)
+			}
 		}
 
 		temperature = temperature * settings.AnnealingFactor
-		res.Energies[i] = energy
 		res.Iterations++
 		logger.AddLine(i, []string{
 			fmt.Sprint(i),
@@ -106,13 +116,15 @@ func SA(
 	}
 
 	end := time.Now()
+
 	res.Runtime = end.Sub(start)
 	res.Iterations = settings.MaxIterations
+	res.Energy = energy
+	res.State = state
 
 	logger.Flush()
 	if settings.Verbose > 0 {
 		fmt.Printf("Done after %v!\n", res.Runtime)
 	}
-
 	return
 }

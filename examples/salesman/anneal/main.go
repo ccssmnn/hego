@@ -86,8 +86,6 @@ func main() {
 	if err != nil {
 		fmt.Printf("Got error while running Anneal: %v", err)
 	}
-	finalState := result.States[len(result.States)-1]
-	finalEnergy := finalState.Energy()
+	finalEnergy := result.Energy
 	fmt.Printf("Finished Simulated Annealing in %v! Tour Length: %v \n", result.Runtime, finalEnergy)
-	return
 }

@@ -43,8 +43,22 @@ func TestES(t *testing.T) {
 	settings.NoiseSigma = 0.1
 	settings.PopulationSize = 10
 	res, err := ES(f, x0, settings)
-	best := res.Candidates[len(res.Candidates)-1]
+	if err != nil {
+		t.Errorf("Unexpected error in ES algorithm: %v", err)
+	}
+	best := res.BestCandidate
 	if best[0] > 0.5 || best[0] < -0.5 {
 		t.Errorf("ES algorithm produced unexpected result. Wanted ~0.0, got %v", best[0])
+	}
+	if len(res.BestObjectives) != 0 {
+		t.Errorf("didn't expect best objectives to contain values, got %v values", len(res.BestObjectives))
+	}
+	settings.KeepHistory = true
+	res, err = ES(f, x0, settings)
+	if err != nil {
+		t.Errorf("Unexpected error in ES algorithm: %v", err)
+	}
+	if len(res.BestObjectives) == 0 {
+		t.Error("with KeepHistory set, bestObjectives should contain values")
 	}
 }

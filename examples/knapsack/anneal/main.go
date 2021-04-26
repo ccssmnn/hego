@@ -59,6 +59,6 @@ func main() {
 		return
 	}
 	// extract result
-	solution := res.States[len(res.States)-1].Energy()
+	solution := res.Energy
 	fmt.Printf("The solution found has an energy of %v \n", solution)
 }

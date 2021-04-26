@@ -134,10 +134,6 @@ func main() {
 		}
 		pheromones[i] = line
 	}
-	tour := make([]int, 0)
-	for i := 0; i < 48; i++ {
-		tour = append(tour, i)
-	}
 
 	population := make([]hego.Ant, 100)
 	for i := range population {
@@ -157,5 +153,4 @@ func main() {
 	} else {
 		fmt.Printf("Finished Ant Colony Optimization in %v! Needed %v function evaluations\n", result.Runtime, result.FuncEvaluations)
 	}
-	return
 }

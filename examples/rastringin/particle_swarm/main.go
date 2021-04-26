@@ -38,6 +38,5 @@ func main() {
 	if err != nil {
 		fmt.Printf("Got error while running Particle Swarm Optimization: %v", err)
 	}
-	fmt.Printf("Finished Particle Swarm Optimization! Result: %v, Value: %v \n", result.BestParticles[len(result.BestParticles)-1], result.BestObjectives[len(result.BestParticles)-1])
-	return
+	fmt.Printf("Finished Particle Swarm Optimization! Result: %v, Value: %v \n", result.BestParticle, result.BestObjective)
 }

@@ -55,14 +55,15 @@ func TestSA(t *testing.T) {
 	settings.AnnealingFactor = 0.99
 	settings.MaxIterations = 1000
 	settings.Verbose = 1
+	settings.KeepHistory = true
 	res, err = SA(initialState, settings)
 	if err != nil {
 		t.Errorf("Error while running Anneal main algorithm: %v", err)
 	}
-	if len(res.Energies) != settings.MaxIterations {
-		t.Errorf("Wrong number of energy values received: expected %v, got %v", settings.MaxIterations, len(res.States))
+	if len(res.Energies) == 0 {
+		t.Error("Energies list should not be empty")
 	}
-	if math.Abs(res.Energies[len(res.Energies)-1]) > 0.5 {
+	if math.Abs(res.Energy) > 0.5 {
 		t.Error("unexpected solution")
 	}
 }

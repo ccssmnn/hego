@@ -12,6 +12,8 @@ import (
 type PSOResult struct {
 	BestParticles  [][]float64
 	BestObjectives []float64
+	BestParticle   []float64
+	BestObjective  float64
 	Result
 }
 
@@ -39,13 +41,13 @@ func (s *PSOSettings) Verify() error {
 		return fmt.Errorf("learning rate must be greater than 0, got %v", s.LearningRate)
 	}
 	if s.Omega < 0.0 {
-		return fmt.Errorf("omega should not be smaller than 0, got %v", s.Omega)
+		return fmt.Errorf("omega must be greater than 0, got %v", s.Omega)
 	}
 	if s.GlobalWeight < 0.0 {
-		return fmt.Errorf("GlobalWeight should not be smaller than 0, got %v", s.GlobalWeight)
+		return fmt.Errorf("GlobalWeight must be greater than 0, got %v", s.GlobalWeight)
 	}
 	if s.ParticleWeight < 0.0 {
-		return fmt.Errorf("ParticleWeight should not be smaller than 0, got %v", s.ParticleWeight)
+		return fmt.Errorf("ParticleWeight must be greater than 0, got %v", s.ParticleWeight)
 	}
 	if s.ParticleWeight == 0.0 && s.GlobalWeight == 0.0 {
 		return errors.New("when ParticleWeight and GlobalWeight are set to 0, the velocity will not change at all")
@@ -70,9 +72,12 @@ func PSO(
 		res.FuncEvaluations++
 		return objective(x)
 	}
-
-	res.BestParticles = make([][]float64, 0, settings.MaxIterations)
-	res.BestObjectives = make([]float64, 0, settings.MaxIterations)
+	if settings.KeepHistory {
+		res.BestParticles = make([][]float64, 0, settings.MaxIterations)
+		res.BestObjectives = make([]float64, 0, settings.MaxIterations)
+	}
+	res.BestObjective = math.MaxFloat64
+	res.BestParticle = make([]float64, 0)
 
 	// initialize population with velocities and best known positions
 	particles := make([][]float64, settings.PopulationSize)
@@ -83,7 +88,6 @@ func PSO(
 	globalBestObj := math.MaxFloat64
 
 	for i := range particles {
-
 		particles[i], velocities[i] = init()
 		bestObjs[i] = evaluate(particles[i])
 		bestPositions[i] = make([]float64, len(particles[i]))
@@ -96,8 +100,10 @@ func PSO(
 		}
 	}
 
-	res.BestObjectives = append(res.BestObjectives, globalBestObj)
-	res.BestParticles = append(res.BestParticles, globalBest)
+	if settings.KeepHistory {
+		res.BestObjectives = append(res.BestObjectives, globalBestObj)
+		res.BestParticles = append(res.BestParticles, globalBest)
+	}
 
 	for i := 0; i < settings.MaxIterations; i++ {
 		totalObj := 0.0
@@ -130,8 +136,13 @@ func PSO(
 		if newGlobalBest {
 			next := make([]float64, len(globalBest))
 			copy(next, globalBest)
-			res.BestParticles = append(res.BestParticles, next)
-			res.BestObjectives = append(res.BestObjectives, globalBestObj)
+			res.BestObjective = globalBestObj
+			res.BestParticle = next
+			if settings.KeepHistory {
+				res.BestParticles = append(res.BestParticles, next)
+				res.BestObjectives = append(res.BestObjectives, globalBestObj)
+			}
+
 		}
 		logger.AddLine(i, []string{
 			fmt.Sprint(i),
@@ -139,14 +150,11 @@ func PSO(
 			fmt.Sprint(globalBestObj),
 		})
 	}
-
-	end := time.Now()
-	res.Runtime = end.Sub(start)
+	res.Runtime = time.Since(start)
 	res.Iterations = settings.MaxIterations
 	logger.Flush()
 	if settings.Verbose > 0 {
 		fmt.Printf("Done after %v!\n", res.Runtime)
 	}
-
 	return res, nil
 }
