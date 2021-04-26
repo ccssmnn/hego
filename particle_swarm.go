@@ -41,13 +41,13 @@ func (s *PSOSettings) Verify() error {
 		return fmt.Errorf("learning rate must be greater than 0, got %v", s.LearningRate)
 	}
 	if s.Omega < 0.0 {
-		return fmt.Errorf("omega should not be smaller than 0, got %v", s.Omega)
+		return fmt.Errorf("omega must be greater than 0, got %v", s.Omega)
 	}
 	if s.GlobalWeight < 0.0 {
-		return fmt.Errorf("GlobalWeight should not be smaller than 0, got %v", s.GlobalWeight)
+		return fmt.Errorf("GlobalWeight must be greater than 0, got %v", s.GlobalWeight)
 	}
 	if s.ParticleWeight < 0.0 {
-		return fmt.Errorf("ParticleWeight should not be smaller than 0, got %v", s.ParticleWeight)
+		return fmt.Errorf("ParticleWeight must be greater than 0, got %v", s.ParticleWeight)
 	}
 	if s.ParticleWeight == 0.0 && s.GlobalWeight == 0.0 {
 		return errors.New("when ParticleWeight and GlobalWeight are set to 0, the velocity will not change at all")
