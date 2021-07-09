@@ -33,6 +33,7 @@ hego has a rich examples directory. It is ordered by problem type and shows how 
 - Knapsack Problem, a binary encoded combinatorical optimization problem to select items to get be best value while respecting the maximum weight ([wikipedia](https://en.wikipedia.org/wiki/Knapsack_problem))
 - Rastrigin Function, a non convex function with a large number of local minima ([wikipedia](https://en.wikipedia.org/wiki/Rastrigin_function))
 - Nurse Scheduling Problem, a scheduling problem for assigning shifts to nurses with constraints ([wikipedia](https://en.wikipedia.org/wiki/Nurse_scheduling_problem))
+- Vehicle Routing Problem, a combination of Knapsack and Traveling Salesman problem ([wikipedia](https://en.wikipedia.org/wiki/Vehicle_routing_problem))
 
 ## Example
 
@@ -104,7 +105,7 @@ It logs:
        99999   0.0004537723395901116   0.0008388313144696014
 
 Done after 108.647155ms!
-Finished Simulated Annealing in 108.647155ms! Result: [0.0010647353926910566 -0.001759125670646859], Value: 0.0008388313144696014 
+Finished Simulated Annealing in 108.647155ms! Result: [0.0010647353926910566 -0.001759125670646859], Value: 0.0008388313144696014
 ```
 
 ## Contributing
