@@ -95,9 +95,8 @@ func main() {
 	result, err := hego.TS(initialState, settings)
 
 	if err != nil {
-		fmt.Printf("Got error while running Anneal: %v", err)
+		fmt.Printf("Got error while running Simulated Annealing: %v", err)
 	}
-	finalState := result.BestState
-	finalEnergy := finalState.Objective()
-	fmt.Printf("Finished Tabu Search in %v! Tour Length: %v \n", result.Runtime, finalEnergy)
+
+	fmt.Printf("Finished Tabu Search in %v! Tour Length: %v \n", result.Runtime, result.BestObjective)
 }
