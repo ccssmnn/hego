@@ -35,6 +35,8 @@ hego has a rich examples directory. It is ordered by problem type and shows how 
 - Nurse Scheduling Problem, a scheduling problem for assigning shifts to nurses with constraints ([wikipedia](https://en.wikipedia.org/wiki/Nurse_scheduling_problem))
 - Vehicle Routing Problem, a combination of Knapsack and Traveling Salesman problem ([wikipedia](https://en.wikipedia.org/wiki/Vehicle_routing_problem))
 
+**NOTE**: The examples goal is to show how hego can be applied to these problem types. The goal ist not to show the current state of the art solution approaches. If you have improvement ideas for the examples performance, feel free to open a PR.
+
 ## Example
 
 This example uses Simulated Annealing (SA) for optimizing the Rastrigin Function:
@@ -116,8 +118,6 @@ This repo is accepting PR's and welcoming issues. Feel free to contribute in any
 - you have ideas to make this library easier to use
 - you have ideas on how to improve the performance
 - you miss algorithm XY
-
-Just be nice.
 
 ## License
 
