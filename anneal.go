@@ -85,7 +85,7 @@ func SA(
 
 	if settings.KeepHistory {
 		res.States = make([]AnnealingState, 0, settings.MaxIterations)
-		res.Energies = make([]float64, settings.MaxIterations)
+		res.Energies = make([]float64, 0, settings.MaxIterations)
 	}
 
 	for i := 0; i < settings.MaxIterations; i++ {
