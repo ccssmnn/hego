@@ -83,7 +83,7 @@ type Genome interface {
 	Fitness() float64
 	// Mutate returns a neighbor of this genome
 	Mutate() Genome
-	// Crossover merges this and another genome to procude a descendant
+	// Crossover merges this and another genome to produce a descendant
 	Crossover(other Genome) Genome
 }
 
@@ -238,7 +238,7 @@ func (p population) selectParents(settings *GASettings) []int {
 
 // GA Performs optimization. The optimization follows three steps:
 // - for current population calculate fitness
-// - select chromosomes with best fitness values with higher propability as parents
+// - select chromosomes with best fitness values with higher probability as parents
 // - use parents for reproduction (crossover and mutation)
 func GA(
 	initialPopulation []Genome,

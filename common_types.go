@@ -12,7 +12,7 @@ type Settings struct {
 	// MaxIterations is the maximum number of iterations run by the algorithm
 	// the algorithm will stop after this number is reached
 	MaxIterations int
-	// Verbose controls wether the algorithm should log information into the
+	// Verbose controls whether the algorithm should log information into the
 	// console. 0 means no logging, n will log every n iterations
 	Verbose int
 	// KeepHistory, when true intermediate results are stored

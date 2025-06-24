@@ -30,12 +30,12 @@ Some algorithms however are only designed for specific sets of optimization prob
 hego has a rich examples directory. It is ordered by problem type and shows how to apply hego's algorithms to these types of problems:
 
 - Traveling Salesman Problem, an integer encoded permutation problem for finding the shortest path to visit all cities ([wikipedia](https://en.wikipedia.org/wiki/Travelling_salesman_problem))
-- Knapsack Problem, a binary encoded combinatorical optimization problem to select items to get be best value while respecting the maximum weight ([wikipedia](https://en.wikipedia.org/wiki/Knapsack_problem))
+- Knapsack Problem, a binary encoded combinatorial optimization problem to select items to get be best value while respecting the maximum weight ([wikipedia](https://en.wikipedia.org/wiki/Knapsack_problem))
 - Rastrigin Function, a non convex function with a large number of local minima ([wikipedia](https://en.wikipedia.org/wiki/Rastrigin_function))
 - Nurse Scheduling Problem, a scheduling problem for assigning shifts to nurses with constraints ([wikipedia](https://en.wikipedia.org/wiki/Nurse_scheduling_problem))
 - Vehicle Routing Problem, a combination of Knapsack and Traveling Salesman problem ([wikipedia](https://en.wikipedia.org/wiki/Vehicle_routing_problem))
 
-**NOTE**: The examples goal is to show how hego can be applied to these problem types. The goal ist not to show the current state of the art solution approaches. If you have improvement ideas for the examples performance, feel free to open a PR.
+**NOTE**: The examples goal is to show how hego can be applied to these problem types. The goal is not to show the current state of the art solution approaches. If you have improvement ideas for the examples performance, feel free to open a PR.
 
 ## Example
 
