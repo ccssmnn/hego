@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"math/rand"
 	"time"
 )
 
@@ -65,6 +64,9 @@ func PSO(
 		err = fmt.Errorf("settings verification failed: %v", err)
 		return res, err
 	}
+
+	settings.Init()
+
 	start := time.Now()
 	logger := newLogger("Particle Swarm Optimization", []string{"Iteration", "Population Mean", "Population Best"}, settings.Verbose, settings.MaxIterations)
 	// increase funcEvaluations counter for every call to objective
@@ -112,7 +114,7 @@ func PSO(
 		for j, particle := range particles {
 			velocity := velocities[j]
 			for d, v := range velocity {
-				rp, rg := rand.Float64(), rand.Float64()
+				rp, rg := settings.Rand.Float64(), settings.Rand.Float64()
 				w := settings.Omega
 				phip, phig := settings.ParticleWeight, settings.GlobalWeight
 				velocity[d] = w*v + phip*rp*(bestPositions[j][d]-particle[d]) + phig*rg*(globalBest[d]-particle[d])

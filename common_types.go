@@ -5,7 +5,10 @@
 // make finding the best algorithm and the right parameters easy and quick
 package hego
 
-import "time"
+import (
+	"math/rand"
+	"time"
+)
 
 // Settings represents the settings of the optimization run
 type Settings struct {
@@ -17,6 +20,20 @@ type Settings struct {
 	Verbose int
 	// KeepHistory, when true intermediate results are stored
 	KeepHistory bool
+	// Random generator, overriding math/rand's default rand.Source when specified.
+	// This is in particular useful for tests predictibility, as since Go 1.24,
+	// rand.Seed() is a no-op; but still as effective with non-default Sources.
+	*rand.Rand
+}
+
+func getRand() *rand.Rand {
+	return rand.New(rand.NewSource(time.Now().UnixNano()))
+}
+
+func (s *Settings) Init() {
+	if s.Rand == nil {
+		s.Rand = getRand()
+	}
 }
 
 // Result represents result information of the optimization, including

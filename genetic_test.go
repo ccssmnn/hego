@@ -83,7 +83,7 @@ func TestGA(t *testing.T) {
 func TestWeightedChoice(t *testing.T) {
 	weights := []float64{1.0, 2.0, 0.0}
 	n := 20
-	choices := weightedChoice(weights, n)
+	choices := weightedChoice(weights, n, getRand())
 	if len(choices) != n {
 		t.Errorf("expected number of choices to be %v, got %v", n, len(choices))
 	}
@@ -93,7 +93,7 @@ func TestWeightedChoice(t *testing.T) {
 		}
 	}
 	weights = []float64{0.0, 0.0, 0.0}
-	choices = weightedChoice(weights, n)
+	choices = weightedChoice(weights, n, getRand())
 	if choices[0] != -1 {
 		t.Errorf("weightedChoice should return -1 if probability of every choice is 0, got: %v", choices[0])
 	}
@@ -102,13 +102,13 @@ func TestWeightedChoice(t *testing.T) {
 			t.Errorf("weighted choice should fail for 0 or less choices")
 		}
 	}()
-	weightedChoice(weights, 0)
+	weightedChoice(weights, 0, getRand())
 }
 
 func TestBinaryWeightedChoice(t *testing.T) {
 	weights := []float64{1.0, 2.0, 0.0}
 	n := 20
-	choices := binaryWeightedChoice(weights, n)
+	choices := binaryWeightedChoice(weights, n, getRand())
 	if len(choices) != n {
 		t.Errorf("expected number of choices to be %v, got %v", n, len(choices))
 	}
@@ -118,7 +118,7 @@ func TestBinaryWeightedChoice(t *testing.T) {
 		}
 	}
 	weights = []float64{0.0, 0.0, 0.0}
-	choices = binaryWeightedChoice(weights, n)
+	choices = binaryWeightedChoice(weights, n, getRand())
 	if choices[0] != -1 {
 		t.Errorf("binaryWeightedChoice should return -1 if probability of every choice is 0, got: %v", choices[0])
 	}
@@ -127,7 +127,7 @@ func TestBinaryWeightedChoice(t *testing.T) {
 			t.Errorf("weighted choice should fail for 0 or less choices")
 		}
 	}()
-	binaryWeightedChoice(weights, 0)
+	binaryWeightedChoice(weights, 0, getRand())
 }
 
 func TestTournament(t *testing.T) {
@@ -146,6 +146,7 @@ func TestSelections(t *testing.T) {
 		candidate{genome: genome(1.0), fitness: 1.0},
 	}
 	settings := GASettings{}
+	settings.Init()
 	settings.Selection = FitnessProportionalSelection
 	parendIds := pop.selectParents(&settings)
 	if len(parendIds) != len(pop) {
