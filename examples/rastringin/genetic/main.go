@@ -28,7 +28,7 @@ func (g genome) Mutate() hego.Genome {
 	return genome(mutate.Gauss(g, 0.5))
 }
 
-// Fitness is called to evaluate the objective functino value. Lower is better
+// Fitness is called to evaluate the objective function value. Lower is better
 func (g genome) Fitness() float64 {
 	return rastringin(g[0], g[1])
 }

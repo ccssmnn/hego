@@ -41,7 +41,7 @@ func TestACO(t *testing.T) {
 	settings.KeepHistory = true
 	res, err = ACO(pop, settings)
 	if err != nil {
-		t.Errorf("ACO shoud not fail, got: %v", err)
+		t.Errorf("ACO should not fail, got: %v", err)
 	}
 	if res.Iterations != settings.MaxIterations {
 		t.Errorf("result iterations unexpected, wanted %v got %v", settings.MaxIterations, res.Iterations)

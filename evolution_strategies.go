@@ -115,7 +115,7 @@ func ES(
 			}
 		}
 
-		// compute standart deviation of rewards
+		// compute standard deviation of rewards
 		meanReward := totalReward / float64(settings.PopulationSize)
 		stdDev := 0.0
 		for _, reward := range rewards {

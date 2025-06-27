@@ -35,7 +35,7 @@ type SAResult struct {
 type SASettings struct {
 	// Temperature is used to determine if another state will be selected or not
 	// better states are selected with probability 1, but worse states are selected
-	// propability p = exp(state_energy - candidate_energy/temperature)
+	// probability p = exp(state_energy - candidate_energy/temperature)
 	// a good value for Temperature is in the range of randomly guessed state energies
 	Temperature float64
 	// AnnealingFactor is used to decrease the temperature after each iteration

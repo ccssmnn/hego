@@ -9,7 +9,7 @@ This problem is one of the more complicated examples, because it is closely rela
 - `offRequests` is a two dimensional array `[d, n]` with ones where nurse `n` requested to have day `d` off
 - `schedule` is a three dimensional array `[d, s, n]` with ones, if nurse `n` was assigned to shift `s` on day `d`
 
-We are trying to minimize `alpha * not_respected_days_off - beta * respected_shift_requests`. In words: fullfill as many shift requests and as many off requests as possible.
+We are trying to minimize `alpha * not_respected_days_off - beta * respected_shift_requests`. In words: fulfill as many shift requests and as many off requests as possible.
 
 Constrains:
 
