@@ -63,6 +63,8 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 		return
 	}
 
+	settings.Init()
+
 	start := time.Now()
 
 	// increase FuncEvaluations for every performance call
@@ -91,7 +93,7 @@ func ACO(population []Ant, settings ACOSettings) (res ACOResult, err error) {
 			// create path for this ant
 			for {
 				options := ant.PerceivePheromone()
-				next := weightedChoice(options, 1)[0]
+				next := weightedChoice(options, 1, settings.Settings.Rand)[0]
 				if ant.Step(next) { // step returns true when ant is done
 					break
 				}

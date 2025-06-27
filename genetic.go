@@ -12,7 +12,7 @@ import (
 // weightedChoice returns n indizes with a probability defined by weights
 // weightedChoice([0.5, 0.3, 0.2], 3) will return 3 indizes. 0 with probability 0.5
 // panics if n < 1, returns -1 if all weights are 0
-func weightedChoice(weights []float64, n int) []int {
+func weightedChoice(weights []float64, n int, r *rand.Rand) []int {
 	if n < 1 {
 		panic("n should be at least 1")
 	}
@@ -26,7 +26,7 @@ func weightedChoice(weights []float64, n int) []int {
 	indizes := make([]int, n)
 	for i := range indizes {
 		indizes[i] = -1
-		r := rand.Float64() * total
+		r := r.Float64() * total
 		for j, weight := range weights {
 			r -= weight
 			if r <= 0.0 {
@@ -41,7 +41,7 @@ func weightedChoice(weights []float64, n int) []int {
 // binaryWeightedChoice returns n indizes with a probability defined by weights
 // it uses a binary search and is more efficient for n > 1 than weightedChoice
 // panics if n < 1, returns -1 if all weights are 0
-func binaryWeightedChoice(weights []float64, n int) []int {
+func binaryWeightedChoice(weights []float64, n int, r *rand.Rand) []int {
 	if n < 1 {
 		panic("number of choices should be 1 or more")
 	}
@@ -55,7 +55,7 @@ func binaryWeightedChoice(weights []float64, n int) []int {
 		return []int{-1}
 	}
 	makeChoice := func() int {
-		target := rand.Float64() * accumulatedWeights[len(weights)-1]
+		target := r.Float64() * accumulatedWeights[len(weights)-1]
 		low, high := 0, len(weights)
 		for low < high {
 			mid := (low + high) / 2
@@ -157,7 +157,7 @@ func (p population) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
 }
 
-func (p population) fitnessProportionalSelection(n int) []int {
+func (p population) fitnessProportionalSelection(n int, settings *GASettings) []int {
 	worst := 0.0
 	for _, c := range p {
 		if c.fitness > worst {
@@ -168,16 +168,16 @@ func (p population) fitnessProportionalSelection(n int) []int {
 	for i, c := range p {
 		weights[i] = math.Max(worst-c.fitness, 1e-10)
 	}
-	return binaryWeightedChoice(weights, n)
+	return binaryWeightedChoice(weights, n, settings.Settings.Rand)
 }
 
-func (p population) rankBasedSelection(n int) []int {
+func (p population) rankBasedSelection(n int, settings *GASettings) []int {
 	sort.Sort(p)
 	weights := make([]float64, len(p))
 	for i := range p {
 		weights[i] = float64(len(p) - i)
 	}
-	return binaryWeightedChoice(weights, n)
+	return binaryWeightedChoice(weights, n, settings.Settings.Rand)
 }
 
 func tournament(weights []float64) int {
@@ -201,13 +201,15 @@ func tournament(weights []float64) int {
 	return contesters[0]
 }
 
-func (p population) tournamentSelection(n, size int) []int {
+func (p population) tournamentSelection(n int, settings *GASettings) []int {
+	size := settings.TournamentSize
+
 	res := make([]int, n)
 	for i := range res {
 		// choose tournament candidates from population
 		indizes := make([]int, size)
 		for j := range indizes {
-			indizes[j] = rand.Intn(len(p))
+			indizes[j] = settings.Rand.Intn(len(p))
 		}
 		// extract fitness from candidates
 		weights := make([]float64, size)
@@ -227,11 +229,11 @@ func (p population) selectParents(settings *GASettings) []int {
 	var parentIds []int
 	switch settings.Selection {
 	case RankBasedSelection:
-		parentIds = p.rankBasedSelection(n)
+		parentIds = p.rankBasedSelection(n, settings)
 	case TournamentSelection:
-		parentIds = p.tournamentSelection(n, settings.TournamentSize)
+		parentIds = p.tournamentSelection(n, settings)
 	case FitnessProportionalSelection:
-		parentIds = p.fitnessProportionalSelection(n)
+		parentIds = p.fitnessProportionalSelection(n, settings)
 	}
 	return parentIds
 }
@@ -249,6 +251,9 @@ func GA(
 		err = fmt.Errorf("settings verification failed: %v", err)
 		return
 	}
+
+	settings.Init()
+
 	// increase FuncEvaluations for every fitness call
 	evaluate := func(g Genome) float64 {
 		res.FuncEvaluations++
@@ -311,9 +316,9 @@ func GA(
 			sort.Sort(&pop)
 		}
 		for idx := settings.Elitism; idx < len(pop); idx++ {
-			parent1 := pop[parentIds[rand.Intn(len(parentIds))]].genome
-			parent2 := pop[parentIds[rand.Intn(len(parentIds))]].genome
-			if rand.Float64() < settings.MutationRate {
+			parent1 := pop[parentIds[settings.Rand.Intn(len(parentIds))]].genome
+			parent2 := pop[parentIds[settings.Rand.Intn(len(parentIds))]].genome
+			if settings.Rand.Float64() < settings.MutationRate {
 				pop[idx].genome = parent1.Crossover(parent2).Mutate()
 			} else {
 				pop[idx].genome = parent1.Crossover(parent2)

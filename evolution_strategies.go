@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"math/rand"
 	"time"
 )
 
@@ -60,6 +59,7 @@ func ES(
 		err = fmt.Errorf("settings verification failed: %v", err)
 		return res, err
 	}
+	settings.Init()
 	start := time.Now()
 	logger := newLogger("Evolution Strategy Algorithm", []string{"Iteration", "Population Mean", "Current Candidate"}, settings.Verbose, settings.MaxIterations)
 	// increase funcEvaluations counter for every call to objective
@@ -70,7 +70,7 @@ func ES(
 	// write noise into x
 	initNoise := func(x []float64) {
 		for i := range x {
-			x[i] = rand.NormFloat64() * settings.NoiseSigma
+			x[i] = settings.Rand.NormFloat64() * settings.NoiseSigma
 		}
 	}
 	// add x to noise vector

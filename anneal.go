@@ -3,7 +3,6 @@ package hego
 import (
 	"fmt"
 	"math"
-	"math/rand"
 	"time"
 )
 
@@ -70,6 +69,8 @@ func SA(
 		return
 	}
 
+	settings.Init()
+
 	start := time.Now()
 
 	logger := newLogger("Simulated Annealing", []string{"Iteration", "Temperature", "Energy"}, settings.Verbose, settings.MaxIterations)
@@ -94,7 +95,7 @@ func SA(
 		update := false
 		if candidateEnergy < energy {
 			update = true
-		} else if math.Exp((energy-candidateEnergy)/temperature) > rand.Float64() {
+		} else if math.Exp((energy-candidateEnergy)/temperature) > settings.Rand.Float64() {
 			update = true
 		}
 		if update {
